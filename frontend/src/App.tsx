@@ -3,7 +3,7 @@ import { Box, Typography } from "@mui/material";
 function App() {
   return (
     <Box>
-      <Typography>Hello world!</Typography>
+      <Typography>Hello world Again!</Typography>
     </Box>
   );
 }
