@@ -1,12 +1,20 @@
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ToastContainer } from 'react-toastify';
 import NewOrderButton from './components/manual-order-create/NewOrderButton';
+
+const queryClient = new QueryClient();
 
 function App() {
     return (
-        <Box>
-            <Typography>Hello world Again and Again and ... Again!</Typography>
-            <NewOrderButton />
-        </Box>
+        <QueryClientProvider client={queryClient}>
+            <Box>
+                <NewOrderButton />
+            </Box>
+            <ToastContainer />
+            <ReactQueryDevtools />
+        </QueryClientProvider>
     );
 }
 
