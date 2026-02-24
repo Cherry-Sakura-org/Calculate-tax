@@ -1,5 +1,5 @@
 # Code Style
 
-## TypeScript
+#### Dialog State With useDialog Hook
 
-Strict mode is enabled with `noUnusedLocals` and `noUnusedParameters`. Module resolution is set to `bundler` mode. SVGs are treated as assets by Rspack.
+Always use `useDialog` from `@src/hooks/use-dialog.ts` to manage dialog state. Name the destructured tuple values using the pattern `show<DialogType>Dialog`, `open<DialogType>Dialog`, `close<DialogType>Dialog`, `mount<DialogType>Dialog` — for example: `const [showCreateOrderDialog, openCreateOrderDialog, closeCreateOrderDialog, mountCreateOrderDialog] = useDialog();`.
