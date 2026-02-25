@@ -10,6 +10,7 @@ import com.acheron.backend.repository.OrderRepository;
 import com.acheron.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -28,11 +29,9 @@ public class OrderService {
     private final UserRepository userRepository;
     private final GeoJsonTaxService geoJsonTaxService;
 
-    public List<OrderResponse> getAllOrders(Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable)
-                .stream()
-                .map(OrderResponse::fromEntity)
-                .toList();
+                .map(OrderResponse::fromEntity);
     }
 
     @Transactional

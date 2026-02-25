@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class OrderApi {
                     content = @Content(schema = @Schema(implementation = OrderResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders(
+    public ResponseEntity<Page<OrderResponse>> getAllOrders(
             @Parameter(description = "Pagination parameters (page, size, sort)")
             @PageableDefault(size = 20, sort = "totalAmount") Pageable pageable
     ) {
