@@ -39,11 +39,10 @@ public class OpenApiConfig {
                                 .email("support@acheron.com")))
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8080")
-                                .description("Local development server"),
+                                .url("https://api.ya3.uk")
+                                .description("Production server"),
                         new Server()
-                                .url("https://api.acheron.com")
-                                .description("Production server")
-                ));
+                                .url("http://localhost:8080")
+                                .description("Local development server")));
     }
 }

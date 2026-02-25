@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Tag(name = "Batch Import", description = "Async CSV import with real-time progress tracking via SSE")
+@Tag(name = "Batch Import", description = "IGNORE!!! USE NATIVE IMPORT!!! Async CSV import with real-time progress tracking via SSE")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/orders/import")
