@@ -19,8 +19,17 @@ export const useCreateOrder = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ordersApi.create,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ordersKeys.lists() }),
-        onError: () => toast.error('Failed to create order'),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            toast.success('Order created successfully');
+        },
+        onError: (error) => {
+            if (error && 'response' in error && (error as any).response?.status === 400) {
+                toast.error('Invalid location - must be within NY State');
+            } else {
+                toast.error('Failed to create order');
+            }
+        },
     });
 };
 

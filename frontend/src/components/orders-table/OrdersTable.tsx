@@ -27,10 +27,18 @@ const TaxBreakdown = ({ order }: { order: Order }) => (
             Tax Rate Breakdown
         </Typography>
         <Stack direction='row' spacing={4}>
-            <Typography variant='body2'>State: {formatRate(order.state_rate)}</Typography>
-            <Typography variant='body2'>County: {formatRate(order.county_rate)}</Typography>
-            <Typography variant='body2'>City: {formatRate(order.city_rate)}</Typography>
-            <Typography variant='body2'>Special: {formatRate(order.special_rates)}</Typography>
+            <Typography variant='body2'>
+                State: {formatRate(order.taxBreakdown.state_rate)}
+            </Typography>
+            <Typography variant='body2'>
+                County: {formatRate(order.taxBreakdown.county_rate)}
+            </Typography>
+            <Typography variant='body2'>
+                City: {formatRate(order.taxBreakdown.city_rate)}
+            </Typography>
+            <Typography variant='body2'>
+                Special: {formatRate(order.taxBreakdown.special_rates)}
+            </Typography>
         </Stack>
     </Box>
 );

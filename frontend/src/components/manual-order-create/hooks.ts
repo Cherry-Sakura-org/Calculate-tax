@@ -12,7 +12,7 @@ import { useCreateOrder } from '../../api/use-orders';
 const newOrderSchema = z.object({
     latitude: z.number().min(LATITUDE_MIN).max(LATITUDE_MAX),
     longitude: z.number().min(LONGITUDE_MIN).max(LONGITUDE_MAX),
-    subtotal: z.number().positive(),
+    subtotal: z.number().min(0.01),
 });
 
 export type NewOrderFormValues = z.infer<typeof newOrderSchema>;
@@ -27,6 +27,7 @@ export const useNewOrderDialogController = ({ onSuccess }: NewOrderDialogControl
     const {
         handleSubmit,
         control,
+        reset,
         formState: { isValid, isDirty },
     } = useForm<NewOrderFormValues>({
         resolver: zodResolver(newOrderSchema),
@@ -34,7 +35,12 @@ export const useNewOrderDialogController = ({ onSuccess }: NewOrderDialogControl
     });
 
     const onSubmit = handleSubmit((values) => {
-        createOrder(values, { onSuccess });
+        createOrder(values, {
+            onSuccess: () => {
+                reset();
+                onSuccess?.();
+            },
+        });
     });
 
     return { onSubmit, control, isSubmitting: isPending, submitDisabled: !isDirty || !isValid };

@@ -1,22 +1,27 @@
+export interface TaxBreakdown {
+    state_rate: number;
+    county_rate: number;
+    city_rate: number;
+    special_rates: number;
+}
+
 export interface Order {
     id: string;
     latitude: number;
     longitude: number;
     subtotal: number;
+    composite_tax_rate: number;
     tax_amount: number;
-    total: number;
-    composite_rate: number;
-    state_rate: number;
-    county_rate: number;
-    city_rate: number;
-    special_rates: number;
+    total_amount: number;
+    timestamp: string;
+    taxBreakdown: TaxBreakdown;
     jurisdictions: string[];
-    created_at: string;
 }
 
 export interface OrdersParams {
     page?: number;
-    page_size?: number;
+    size?: number;
+    sort?: string[];
     date_from?: string;
     date_to?: string;
     latitude?: number;
@@ -25,11 +30,16 @@ export interface OrdersParams {
     max_tax_rate?: number;
 }
 
+export interface PageMetadata {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+}
+
 export interface PaginatedResponse<T> {
-    items: T[];
-    total: number;
-    page: number;
-    page_size: number;
+    content: T[];
+    page: PageMetadata;
 }
 
 export interface CreateOrderPayload {

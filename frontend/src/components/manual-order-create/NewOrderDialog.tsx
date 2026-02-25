@@ -47,7 +47,10 @@ const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
                         control={control}
                         label='Subtotal'
                         fullWidth
-                        min={0}
+                        min={0.01}
+                        prefix='$'
+                        decimalScale={2}
+                        fixedDecimalScale
                     />
                 </Stack>
             </DialogContent>

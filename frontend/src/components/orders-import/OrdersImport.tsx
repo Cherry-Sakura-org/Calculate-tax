@@ -60,10 +60,10 @@ export const OrdersImport: React.FC = () => {
     return (
         <Box sx={{ maxWidth: 520, mx: 'auto', p: 3 }}>
             <Typography variant='h5' fontWeight={600} gutterBottom>
-                Імпорт замовлень
+                Import Orders
             </Typography>
             <Typography variant='body2' color='text.secondary' mb={3}>
-                Завантажте CSV файл для масового імпорту замовлень
+                Upload a CSV file for bulk order import
             </Typography>
 
             {/* Dropzone */}
@@ -99,10 +99,10 @@ export const OrdersImport: React.FC = () => {
                 />
                 <UploadFileIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                 <Typography variant='body1' fontWeight={500}>
-                    Перетягніть CSV файл сюди
+                    Drag and drop a CSV file here
                 </Typography>
                 <Typography variant='body2' color='text.secondary'>
-                    або натисніть для вибору
+                    or click to select
                 </Typography>
             </Paper>
 
@@ -132,11 +132,11 @@ export const OrdersImport: React.FC = () => {
                         isLoading ? <CircularProgress size={18} color='inherit' /> : undefined
                     }
                 >
-                    {isLoading ? 'Імпортуємо...' : 'Імпортувати'}
+                    {isLoading ? 'Importing...' : 'Import'}
                 </Button>
                 {(isSuccess || isError) && (
                     <Button variant='text' onClick={handleReset}>
-                        Скинути
+                        Reset
                     </Button>
                 )}
             </Stack>
@@ -144,12 +144,12 @@ export const OrdersImport: React.FC = () => {
             {/* Success */}
             {isSuccess && data && (
                 <Alert severity='success' icon={<CheckCircleOutlineIcon />} sx={{ mt: 3 }}>
-                    <AlertTitle>Імпорт завершено</AlertTitle>
-                    Успішно імпортовано: <strong>{data.imported}</strong> замовлень.
+                    <AlertTitle>Import Complete</AlertTitle>
+                    Successfully imported: <strong>{data.imported}</strong> orders.
                     {data.failed > 0 && (
                         <>
                             {' '}
-                            Пропущено рядків із помилками: <strong>{data.failed}</strong>.
+                            Skipped rows with errors: <strong>{data.failed}</strong>.
                         </>
                     )}
                     {data.errors && data.errors.length > 0 && (
