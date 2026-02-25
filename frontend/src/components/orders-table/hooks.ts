@@ -8,8 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { DateTime } from 'luxon';
 import type { Order } from '../../types/order';
-// import { useOrders } from '../../api/use-orders'; // Uncomment when using real API data instead of mock data
-import { mockOrders } from './mock-orders';
+import { useOrders } from '../../api/use-orders';
 
 const columnHelper = createColumnHelper<Order>();
 
@@ -43,11 +42,11 @@ const columns = [
         header: 'Tax',
         cell: (info) => `$${info.getValue().toFixed(2)}`,
     }),
-    columnHelper.accessor('total', {
+    columnHelper.accessor('total_amount', {
         header: 'Total',
         cell: (info) => `$${info.getValue().toFixed(2)}`,
     }),
-    columnHelper.accessor('composite_rate', {
+    columnHelper.accessor('composite_tax_rate', {
         header: 'Tax Rate',
         cell: (info) => formatRate(info.getValue()),
     }),
@@ -55,7 +54,7 @@ const columns = [
         header: 'Jurisdictions',
         cell: (info) => info.getValue().join(', '),
     }),
-    columnHelper.accessor('created_at', {
+    columnHelper.accessor('timestamp', {
         header: 'Created',
         cell: (info) => DateTime.fromISO(info.getValue()).toLocaleString(DateTime.DATETIME_SHORT),
     }),
@@ -67,33 +66,25 @@ export const useOrdersTableController = () => {
         pageSize: 10,
     });
 
-    // const { data, isLoading } = useOrders({
-    //     page: pagination.pageIndex + 1,
-    //     page_size: pagination.pageSize,
-    // });
+    const { data, isLoading } = useOrders({
+        page: pagination.pageIndex,
+        size: pagination.pageSize,
+    });
 
-    // mock data - replace with real API call above
-    const start = pagination.pageIndex * pagination.pageSize;
-    const data = {
-        items: mockOrders.slice(start, start + pagination.pageSize),
-        total: mockOrders.length,
-    };
-    const isLoading = false;
-    // end mock
+    const items = data?.items ?? [];
+    const totalRows = data?.total ?? 0;
 
     const table = useReactTable({
-        data: data?.items ?? [],
+        data: items,
         columns,
         state: { pagination },
         onPaginationChange: setPagination,
         getCoreRowModel: getCoreRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
         manualPagination: true,
-        pageCount: data ? Math.ceil(data.total / pagination.pageSize) : -1,
+        pageCount: totalRows > 0 ? Math.ceil(totalRows / pagination.pageSize) : -1,
         getRowCanExpand: () => true,
     });
-
-    const totalRows = data?.total ?? 0;
 
     return { table, isLoading, pagination, setPagination, totalRows };
 };
