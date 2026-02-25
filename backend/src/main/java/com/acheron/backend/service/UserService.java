@@ -17,7 +17,14 @@ public class UserService implements UserDetailsService {
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.userRepository.save(new User(null,"test@test.com","acheron",passwordEncoder.encode("password"), Role.ADMIN));
+        if (!userRepository.existsByUsername("acheron")) {
+            userRepository.save(User.builder()
+                    .email("test@test.com")
+                    .username("acheron")
+                    .passwordHash(passwordEncoder.encode("password"))
+                    .role(Role.ADMIN)
+                    .build());
+        }
     }
 
     @Override

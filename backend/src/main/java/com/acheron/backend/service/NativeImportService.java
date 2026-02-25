@@ -6,6 +6,7 @@ import com.acheron.backend.entity.OrderTaxBreakdown;
 import com.acheron.backend.entity.User;
 import com.acheron.backend.repository.OrderRepository;
 import com.acheron.backend.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +40,7 @@ public class NativeImportService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final PlatformTransactionManager transactionManager;
+    private final EntityManager entityManager;
 
     private static final int PROCESS_BATCH_SIZE = 1000;
     private static final int SAVE_BATCH_SIZE = 500;
@@ -60,75 +64,98 @@ public class NativeImportService {
 
     private record CsvLine(int lineNumber, String[] fields) {}
 
+    private record ParsedOrder(
+            BigDecimal latitude,
+            BigDecimal longitude,
+            BigDecimal subtotal,
+            LocalDateTime orderedAt,
+            TaxCalculationResult taxResult
+    ) {}
+
     public ImportResult importCsv(MultipartFile file) {
+        log.info("Starting CSV import. File size: {} bytes", file.getSize());
         long startTime = System.nanoTime();
+
         List<CsvLine> parsedLines = parseCsvFile(file);
         int totalRecords = parsedLines.size();
+        log.info("Parsed {} lines from CSV (excluding header).", totalRecords);
 
-        User currentUser = userRepository.findByUsername("acheron")
-                .orElseThrow(() -> new IllegalStateException("User 'acheron' not found"));
+        if (totalRecords == 0) {
+            log.warn("CSV file has no data rows!");
+            return new ImportResult(0, 0, 0, 0, 0, List.of());
+        }
 
-        AtomicInteger successCount = new AtomicInteger();
+        UUID userId = userRepository.findByUsername("acheron")
+                .orElseThrow(() -> new IllegalStateException("User 'acheron' not found"))
+                .getId();
+
         AtomicInteger failCount = new AtomicInteger();
         CopyOnWriteArrayList<ImportError> errors = new CopyOnWriteArrayList<>();
 
         List<List<CsvLine>> processBatches = partition(parsedLines, PROCESS_BATCH_SIZE);
+        log.info("Phase 1: Submitting {} batches for parallel tax calculation...", processBatches.size());
 
-        // Phase 1: parallel tax calculation on virtual threads
-        List<Order> allOrders;
+        List<ParsedOrder> allParsed = new ArrayList<>(totalRecords);
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<List<Order>>> futures = new ArrayList<>(processBatches.size());
+            List<Future<List<ParsedOrder>>> futures = new ArrayList<>(processBatches.size());
 
             for (List<CsvLine> batch : processBatches) {
-                futures.add(executor.submit(() -> processBatch(batch, currentUser, errors, failCount)));
+                futures.add(executor.submit(() -> parseAndCalcTax(batch, errors, failCount)));
             }
 
-            allOrders = new ArrayList<>(totalRecords);
-            for (Future<List<Order>> future : futures) {
+            for (Future<List<ParsedOrder>> future : futures) {
                 try {
-                    allOrders.addAll(future.get());
+                    allParsed.addAll(future.get());
                 } catch (Exception e) {
-                    log.error("Batch tax calc failed: {}", e.getMessage());
+                    log.error("Batch tax calc task failed completely: {}", e.getMessage(), e);
                 }
             }
         }
 
-        log.info("Phase 1 done: {} orders ready for save, {} failed tax calc", allOrders.size(), failCount.get());
+        log.info("Phase 1 done: {} parsed orders ready, {} failed during parsing/tax calc",
+                allParsed.size(), failCount.get());
 
-        // Phase 2: parallel DB saves using TransactionTemplate (works from virtual threads)
         TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
-        List<List<Order>> saveBatches = partition(allOrders, SAVE_BATCH_SIZE);
+        List<List<ParsedOrder>> saveBatches = partition(allParsed, SAVE_BATCH_SIZE);
+        AtomicInteger successCount = new AtomicInteger();
 
-        try (ExecutorService saveExecutor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<Integer>> saveFutures = new ArrayList<>(saveBatches.size());
+        log.info("Phase 2: Saving {} batches to database (Batch size: {})...", saveBatches.size(), SAVE_BATCH_SIZE);
 
-            for (List<Order> batch : saveBatches) {
-                saveFutures.add(saveExecutor.submit(() ->
-                        txTemplate.execute(status -> {
-                            orderRepository.saveAll(batch);
-                            return batch.size();
-                        })
-                ));
-            }
+        for (int i = 0; i < saveBatches.size(); i++) {
+            List<ParsedOrder> batch = saveBatches.get(i);
+            int batchIndex = i + 1;
 
-            for (Future<Integer> future : saveFutures) {
-                try {
-                    Integer saved = future.get();
-                    if (saved != null) {
-                        successCount.addAndGet(saved);
+            try {
+                txTemplate.executeWithoutResult(status -> {
+                    User userRef = entityManager.getReference(User.class, userId);
+
+                    List<Order> orders = new ArrayList<>(batch.size());
+                    for (ParsedOrder po : batch) {
+                        orders.add(toOrder(po, userRef));
                     }
-                } catch (Exception e) {
-                    log.error("Batch save failed: {}", e.getMessage());
-                }
+                    orderRepository.saveAll(orders);
+                    entityManager.flush();
+                    entityManager.clear();
+                });
+
+                successCount.addAndGet(batch.size());
+                log.debug("DB Batch {}/{} saved successfully.", batchIndex, saveBatches.size());
+
+            } catch (Exception e) {
+                Throwable rootCause = getRootCause(e);
+                log.error("DB Batch {}/{} FAILED! Reason: {}", batchIndex, saveBatches.size(), rootCause.getMessage());
+
+                failCount.addAndGet(batch.size());
+                errors.add(new ImportError(-1, "DB Batch save failed: " + rootCause.getMessage(), "Batch " + batchIndex));
             }
         }
 
         long durationMs = (System.nanoTime() - startTime) / 1_000_000;
         double recordsPerSecond = durationMs > 0 ? (totalRecords * 1000.0) / durationMs : 0;
 
-        log.info("Native import: total={}, success={}, failed={}, duration={}ms, throughput={} rec/sec",
+        log.info("Native import finished: total={}, success={}, failed={}, duration={}ms, throughput={} rec/sec",
                 totalRecords, successCount.get(), failCount.get(), durationMs,
-                String.format("%.0f", recordsPerSecond));
+                String.format("%.1f", recordsPerSecond));
 
         List<ImportError> truncatedErrors = errors.size() > 100
                 ? new ArrayList<>(errors.subList(0, 100))
@@ -153,6 +180,7 @@ public class NativeImportService {
             if (header == null) {
                 throw new IllegalArgumentException("CSV file is empty");
             }
+            log.info("CSV Header: {}", header);
 
             int lineNum = 1;
             String line;
@@ -163,47 +191,60 @@ public class NativeImportService {
                 }
             }
         } catch (java.io.IOException e) {
+            log.error("Failed to read CSV file IO", e);
             throw new IllegalArgumentException("Failed to read CSV file: " + e.getMessage(), e);
         }
         return lines;
     }
 
-    private List<Order> processBatch(List<CsvLine> batch, User user,
-                                     CopyOnWriteArrayList<ImportError> errors,
-                                     AtomicInteger failCount) {
-        List<Order> orders = new ArrayList<>(batch.size());
+    private List<ParsedOrder> parseAndCalcTax(List<CsvLine> batch,
+                                              CopyOnWriteArrayList<ImportError> errors,
+                                              AtomicInteger failCount) {
+        List<ParsedOrder> results = new ArrayList<>(batch.size());
 
         for (CsvLine csvLine : batch) {
             try {
-                Order order = processRecord(csvLine.fields(), user);
-                orders.add(order);
+                String[] fields = csvLine.fields();
+
+                if (csvLine.lineNumber() == 2) {
+                    log.info("DEBUG - First data row fields: {}", Arrays.toString(fields));
+                }
+
+                if (fields.length < 5) {
+                    throw new IllegalArgumentException("Expected at least 5 columns, got " + fields.length + ". Data: " + Arrays.toString(fields));
+                }
+
+                BigDecimal longitude = new BigDecimal(fields[1].trim());
+                BigDecimal latitude = new BigDecimal(fields[2].trim());
+                LocalDateTime timestamp = LocalDateTime.parse(fields[3].trim(), TIMESTAMP_FORMATTER);
+                BigDecimal subtotal = new BigDecimal(fields[4].trim());
+
+                TaxCalculationResult taxResult = geoJsonTaxService.calculateTax(latitude, longitude);
+
+                results.add(new ParsedOrder(latitude, longitude, subtotal, timestamp, taxResult));
             } catch (Exception e) {
                 failCount.incrementAndGet();
                 String recordData = String.join(",", csvLine.fields());
+
+                if (failCount.get() <= 5) {
+                    log.warn("Parse error on line {}: {}", csvLine.lineNumber(), e.getMessage());
+                }
+
                 errors.add(new ImportError(csvLine.lineNumber(), e.getMessage(), truncate(recordData, 200)));
             }
         }
 
-        return orders;
+        return results;
     }
 
-    private Order processRecord(String[] fields, User user) {
-        if (fields.length < 5) {
-            throw new IllegalArgumentException("Expected 5 columns, got " + fields.length);
-        }
+    private Order toOrder(ParsedOrder po, User user) {
+        TaxCalculationResult taxResult = po.taxResult();
 
-        BigDecimal longitude = new BigDecimal(fields[1].trim());
-        BigDecimal latitude = new BigDecimal(fields[2].trim());
-        LocalDateTime timestamp = LocalDateTime.parse(fields[3].trim(), TIMESTAMP_FORMATTER);
-        BigDecimal subtotal = new BigDecimal(fields[4].trim());
-
-        TaxCalculationResult taxResult = geoJsonTaxService.calculateTax(latitude, longitude);
-
-        BigDecimal taxAmount = subtotal
+        BigDecimal taxAmount = po.subtotal()
                 .multiply(taxResult.getCompositeTaxRate())
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal totalAmount = subtotal
+        BigDecimal totalAmount = po.subtotal()
                 .add(taxAmount)
                 .setScale(2, RoundingMode.HALF_UP);
 
@@ -216,10 +257,10 @@ public class NativeImportService {
                 .build();
 
         Order order = Order.builder()
-                .latitude(latitude)
-                .longitude(longitude)
-                .subtotal(subtotal)
-                .orderedAt(timestamp)
+                .latitude(po.latitude())
+                .longitude(po.longitude())
+                .subtotal(po.subtotal())
+                .orderedAt(po.orderedAt())
                 .compositeTaxRate(taxResult.getCompositeTaxRate())
                 .taxAmount(taxAmount)
                 .totalAmount(totalAmount)
@@ -241,5 +282,13 @@ public class NativeImportService {
     private static String truncate(String str, int maxLength) {
         if (str == null) return null;
         return str.length() > maxLength ? str.substring(0, maxLength) + "..." : str;
+    }
+
+    private Throwable getRootCause(Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null && cause != cause.getCause()) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }

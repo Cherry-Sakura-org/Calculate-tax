@@ -18,17 +18,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TaxLocalityService {
 
-    private static final String CACHE_LOCALITY = "tax-localities";
     private static final String CACHE_ALL = "tax-localities-all";
 
     private final TaxLocalityRepository taxLocalityRepository;
     private final ObjectMapper objectMapper;
+
+    private final ConcurrentHashMap<String, Optional<TaxLocality>> localityCache = new ConcurrentHashMap<>();
+
+    public TaxLocalityService(TaxLocalityRepository taxLocalityRepository, ObjectMapper objectMapper) {
+        this.taxLocalityRepository = taxLocalityRepository;
+        this.objectMapper = objectMapper;
+    }
 
     @PostConstruct
     @Transactional
@@ -47,7 +53,7 @@ public class TaxLocalityService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = {CACHE_LOCALITY, CACHE_ALL}, allEntries = true)
+    @CacheEvict(cacheNames = CACHE_ALL, allEntries = true)
     public void loadTaxLocalitiesFromJson() throws IOException {
         ClassPathResource resource = new ClassPathResource("data/ny-tax-localities.json");
 
@@ -60,12 +66,13 @@ public class TaxLocalityService {
             taxLocalityRepository.deleteAll();
             taxLocalityRepository.flush();
             taxLocalityRepository.saveAll(localities);
+            localityCache.clear();
             log.info("Loaded {} tax localities from JSON (replaced all)", localities.size());
         }
     }
 
     @Transactional
-    @CacheEvict(cacheNames = {CACHE_LOCALITY, CACHE_ALL}, allEntries = true)
+    @CacheEvict(cacheNames = CACHE_ALL, allEntries = true)
     public void saveTaxLocalitiesFromJson(String jsonContent) throws IOException {
         List<TaxLocality> localities = objectMapper.readValue(
                 jsonContent,
@@ -75,27 +82,32 @@ public class TaxLocalityService {
         taxLocalityRepository.deleteAll();
         taxLocalityRepository.flush();
         taxLocalityRepository.saveAll(localities);
+        localityCache.clear();
         log.info("Saved {} tax localities from JSON (replaced all)", localities.size());
     }
 
-    @Cacheable(cacheNames = CACHE_LOCALITY, key = "'locality:' + #locality")
     public Optional<TaxLocality> findByLocality(String locality) {
         if (locality == null || locality.isBlank()) {
             return Optional.empty();
         }
 
         String normalizedLocality = normalizeLocalityName(locality);
-        return taxLocalityRepository.findByLocalityIgnoreCase(normalizedLocality);
+        String cacheKey = "locality:" + normalizedLocality.toLowerCase();
+
+        return localityCache.computeIfAbsent(cacheKey,
+                k -> taxLocalityRepository.findByLocalityIgnoreCase(normalizedLocality));
     }
 
-    @Cacheable(cacheNames = CACHE_LOCALITY, key = "'county:' + #name")
     public Optional<TaxLocality> findByLocalityOrCounty(String name) {
         if (name == null || name.isBlank()) {
             return Optional.empty();
         }
 
         String normalized = normalizeLocalityName(name);
-        return taxLocalityRepository.findByLocalityOrCounty(normalized);
+        String cacheKey = "county:" + normalized.toLowerCase();
+
+        return localityCache.computeIfAbsent(cacheKey,
+                k -> taxLocalityRepository.findByLocalityOrCounty(normalized));
     }
 
     @Cacheable(cacheNames = CACHE_ALL)
@@ -128,15 +140,17 @@ public class TaxLocalityService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = {CACHE_LOCALITY, CACHE_ALL}, allEntries = true)
+    @CacheEvict(cacheNames = CACHE_ALL, allEntries = true)
     public TaxLocality saveTaxLocality(TaxLocality locality) {
+        localityCache.clear();
         return taxLocalityRepository.save(locality);
     }
 
     @Transactional
-    @CacheEvict(cacheNames = {CACHE_LOCALITY, CACHE_ALL}, allEntries = true)
+    @CacheEvict(cacheNames = CACHE_ALL, allEntries = true)
     public void deleteTaxLocality(String locality) {
         taxLocalityRepository.findByLocalityIgnoreCase(locality)
                 .ifPresent(taxLocalityRepository::delete);
+        localityCache.clear();
     }
 }
