@@ -1,6 +1,6 @@
-package com.acheron.backend.batch;
+package com.acheron.backend.batchforapi;
 
-import com.acheron.backend.dto.batch.OrderCsvRecord;
+import com.acheron.backend.batchforapi.dto.OrderCsvRecord;
 import org.springframework.batch.infrastructure.item.file.FlatFileItemReader;
 
 import org.springframework.batch.infrastructure.item.file.builder.FlatFileItemReaderBuilder;

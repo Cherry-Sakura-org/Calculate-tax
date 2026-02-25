@@ -1,7 +1,7 @@
-package com.acheron.backend.repository;
+package com.acheron.backend.batchforapi.repository;
 
-import com.acheron.backend.entity.BatchImportError;
-import com.acheron.backend.entity.BatchJobExecution;
+import com.acheron.backend.batchforapi.entity.BatchImportError;
+import com.acheron.backend.batchforapi.entity.BatchJobExecution;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

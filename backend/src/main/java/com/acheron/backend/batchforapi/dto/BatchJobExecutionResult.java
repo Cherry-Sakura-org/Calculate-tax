@@ -1,4 +1,4 @@
-package com.acheron.backend.dto.batch;
+package com.acheron.backend.batchforapi.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

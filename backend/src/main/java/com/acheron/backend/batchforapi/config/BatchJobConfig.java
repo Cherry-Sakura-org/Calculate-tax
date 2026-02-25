@@ -1,13 +1,13 @@
-package com.acheron.backend.config;
+package com.acheron.backend.batchforapi.config;
 
-import com.acheron.backend.batch.OrderCsvItemReader;
-import com.acheron.backend.batch.OrderItemProcessor;
-import com.acheron.backend.batch.OrderItemWriter;
-import com.acheron.backend.batch.listener.BatchJobProgressListener;
-import com.acheron.backend.batch.listener.JobCompletionNotificationListener;
-import com.acheron.backend.batch.listener.SkipListener;
-import com.acheron.backend.batch.listener.StepExecutionNotificationListener;
-import com.acheron.backend.dto.batch.OrderCsvRecord;
+import com.acheron.backend.batchforapi.OrderCsvItemReader;
+import com.acheron.backend.batchforapi.OrderItemProcessor;
+import com.acheron.backend.batchforapi.OrderItemWriter;
+import com.acheron.backend.batchforapi.listener.BatchJobProgressListener;
+import com.acheron.backend.batchforapi.listener.JobCompletionNotificationListener;
+import com.acheron.backend.batchforapi.listener.SkipListener;
+import com.acheron.backend.batchforapi.listener.StepExecutionNotificationListener;
+import com.acheron.backend.batchforapi.dto.OrderCsvRecord;
 import com.acheron.backend.entity.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.job.Job;

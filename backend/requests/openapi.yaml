@@ -26,19 +26,30 @@ servers:
 - url: https://api.acheron.com
   description: Production server
 tags:
-- name: Orders
-  description: Order management API with tax calculation and geocoding
+- name: Native Import
+  description: High-performance native CSV import with GeoJSON tax calculation (~11k
+    records/sec)
+- name: Tax Localities
+  description: "Manage NY State tax locality data — rates, counties, special districts"
 - name: Batch Import
   description: Async CSV import with real-time progress tracking via SSE
+- name: Map
+  description: "Map data API — GeoJSON orders with filters, boundary layers, stats,\
+    \ CSV preview"
+- name: Orders
+  description: Order management API with native GeoJSON tax calculation
 paths:
   /tax-localities:
     get:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Get all tax localities
+      description: "Returns all NY State tax localities with rates, reporting codes,\
+        \ and district flags. Cached for 24h."
       operationId: getAllTaxLocalities
       responses:
         "200":
-          description: OK
+          description: List of tax localities
           content:
             '*/*':
               schema:
@@ -47,7 +58,8 @@ paths:
                   $ref: "#/components/schemas/TaxLocality"
     post:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Create a single tax locality
       operationId: createTaxLocality
       requestBody:
         content:
@@ -65,11 +77,21 @@ paths:
   /tax-localities/reload:
     post:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Reload tax localities from built-in JSON
+      description: Deletes ALL existing tax localities and reloads from the bundled
+        ny-tax-localities.json file. Clears all caches.
       operationId: reloadFromJson
       responses:
         "200":
-          description: OK
+          description: Reloaded successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "500":
+          description: Failed to reload
           content:
             '*/*':
               schema:
@@ -78,7 +100,10 @@ paths:
   /tax-localities/import:
     post:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Import tax localities from custom JSON body
+      description: Deletes ALL existing tax localities and replaces them with the
+        provided JSON array. Clears all caches.
       operationId: importFromJson
       requestBody:
         content:
@@ -88,7 +113,14 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: Imported successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "400":
+          description: Invalid JSON
           content:
             '*/*':
               schema:
@@ -119,9 +151,8 @@ paths:
       tags:
       - Orders
       summary: Create new order
-      description: "Creates a new order with automatic tax calculation based on coordinates.\
-        \ Validates that the location is within New York State and calculates appropriate\
-        \ state, county, and city taxes."
+      description: Creates a new order with automatic tax calculation based on coordinates
+        using native GeoJSON point-in-polygon lookup. No external API calls.
       operationId: createOrder
       requestBody:
         content:
@@ -138,39 +169,6 @@ paths:
                 $ref: "#/components/schemas/OrderResponse"
         "400":
           description: Invalid request or location outside NY State
-        "500":
-          description: Geocoding or tax calculation failed
-  /orders/import:
-    post:
-      tags:
-      - Orders
-      summary: Import orders from CSV (Deprecated)
-      description: Synchronous CSV import. **Deprecated:** Use /api/v1/orders/import
-        for async processing with real-time progress tracking.
-      operationId: importOrdersFromCsv
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: "CSV file with columns: latitude, longitude, subtotal,\
-                    \ timestamp"
-              required:
-              - file
-      responses:
-        "200":
-          description: Import completed
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/BatchJobExecutionResult"
-        "400":
-          description: Invalid CSV file
-      deprecated: true
   /api/v1/orders/import:
     post:
       tags:
@@ -206,10 +204,87 @@ paths:
                   status: QUEUED
         "400":
           description: Invalid file or upload failed
+  /api/v1/native/import:
+    post:
+      tags:
+      - Native Import
+      summary: Import orders from CSV (native)
+      description: "High-performance CSV import using virtual threads and native GeoJSON\
+        \ point-in-polygon tax calculation. No external API calls. Processes ~11k\
+        \ records/sec. CSV columns: id, longitude, latitude, timestamp, subtotal"
+      operationId: importCsv
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "CSV file with columns: id, longitude, latitude, timestamp,\
+                    \ subtotal"
+              required:
+              - file
+      responses:
+        "200":
+          description: Import completed
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          description: Invalid CSV file
+  /api/v1/map/csv-preview:
+    post:
+      tags:
+      - Map
+      summary: Preview CSV points on map (no save)
+      description: Parses CSV → GeoJSON points for map preview. Does NOT persist.
+        Includes point count and subtotal sum.
+      operationId: previewCsvOnMap
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "CSV file: id, longitude, latitude, timestamp, subtotal"
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: object
+                additionalProperties: {}
+  /api/v1/map/cache/clear:
+    post:
+      tags:
+      - Map
+      summary: Clear GeoJSON tax calc cache
+      operationId: clearCache
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
   /tax-localities/{locality}:
     get:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Find tax locality by name
+      description: "Lookup a specific locality by name (case-insensitive, normalizes\
+        \ county suffixes and NYC borough aliases)."
       operationId: getTaxLocality
       parameters:
       - name: locality
@@ -219,14 +294,21 @@ paths:
           type: string
       responses:
         "200":
-          description: OK
+          description: Tax locality found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TaxLocality"
+        "404":
+          description: Locality not found
           content:
             '*/*':
               schema:
                 $ref: "#/components/schemas/TaxLocality"
     delete:
       tags:
-      - tax-locality-api
+      - Tax Localities
+      summary: Delete a tax locality by name
       operationId: deleteTaxLocality
       parameters:
       - name: locality
@@ -371,6 +453,211 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PagedModel"
+  /api/v1/map/orders:
+    get:
+      tags:
+      - Map
+      summary: Get orders as GeoJSON with filters + aggregate summary
+      description: |-
+        Returns orders as a GeoJSON FeatureCollection with rich filtering:
+        - **Bounding box**: minLat/maxLat/minLon/maxLon for viewport loading
+        - **Subtotal range**: minSubtotal/maxSubtotal
+        - **Tax rate range**: minTaxRate/maxTaxRate (composite rate, e.g. 0.08)
+        - **Date range**: from/to (ISO datetime)
+        - **Limit**: max features returned (default 10000)
+
+        Response includes `summary` with aggregate totals for the filtered set.
+      operationId: getOrdersGeoJson
+      parameters:
+      - name: minLat
+        in: query
+        description: Min latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        description: Max latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        description: Min longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        description: Max longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        description: Min subtotal filter
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        description: Max subtotal filter
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        description: Min composite tax rate (e.g. 0.04)
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        description: Max composite tax rate (e.g. 0.09)
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        description: "From date (ISO, e.g. 2024-01-01T00:00:00)"
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: "To date (ISO, e.g. 2024-12-31T23:59:59)"
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: limit
+        in: query
+        description: Max features to return (default 10000)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10000
+      responses:
+        "200":
+          description: GeoJSON FeatureCollection with summary
+          content:
+            application/geo+json:
+              schema:
+                type: object
+                additionalProperties: {}
+  /api/v1/map/orders/stats:
+    get:
+      tags:
+      - Map
+      summary: Get order stats summary
+      description: "Aggregate stats: total orders, revenue, tax, avg value, orders-by-county\
+        \ breakdown. Supports same filters as /orders."
+      operationId: getOrderStats
+      parameters:
+      - name: minLat
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /api/v1/map/cache/stats:
+    get:
+      tags:
+      - Map
+      summary: Get GeoJSON tax calc cache stats
+      operationId: getCacheStats
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /api/v1/map/boundaries/counties:
+    get:
+      tags:
+      - Map
+      summary: Get NY county boundaries GeoJSON
+      operationId: getCountyBoundaries
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: string
+                format: byte
+  /api/v1/map/boundaries/boroughs:
+    get:
+      tags:
+      - Map
+      summary: Get NYC borough boundaries GeoJSON
+      operationId: getBoroughBoundaries
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: string
+                format: byte
 components:
   schemas:
     TaxLocality:
@@ -460,31 +747,38 @@ components:
           type: number
         special_rates:
           type: number
-    BatchJobExecutionResult:
+    ImportError:
       type: object
       properties:
-        executionId:
+        lineNumber:
           type: integer
-          format: int64
-        status:
+          format: int32
+        errorMessage:
           type: string
+        recordData:
+          type: string
+    ImportResult:
+      type: object
+      properties:
         totalRecords:
           type: integer
           format: int32
-        processedRecords:
+        successfulRecords:
           type: integer
           format: int32
         failedRecords:
           type: integer
           format: int32
-        startTime:
-          type: string
-          format: date-time
-        endTime:
-          type: string
-          format: date-time
-        errorMessage:
-          type: string
+        durationMs:
+          type: integer
+          format: int64
+        recordsPerSecond:
+          type: number
+          format: double
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
     Pageable:
       type: object
       properties:

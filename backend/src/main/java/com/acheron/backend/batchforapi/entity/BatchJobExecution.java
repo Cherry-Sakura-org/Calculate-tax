@@ -1,4 +1,4 @@
-package com.acheron.backend.entity;
+package com.acheron.backend.batchforapi.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

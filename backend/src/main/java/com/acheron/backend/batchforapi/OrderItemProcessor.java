@@ -1,7 +1,7 @@
-package com.acheron.backend.batch;
+package com.acheron.backend.batchforapi;
 
 import com.acheron.backend.dto.TaxCalculationResult;
-import com.acheron.backend.dto.batch.OrderCsvRecord;
+import com.acheron.backend.batchforapi.dto.OrderCsvRecord;
 import com.acheron.backend.entity.Order;
 import com.acheron.backend.entity.OrderTaxBreakdown;
 import com.acheron.backend.entity.User;

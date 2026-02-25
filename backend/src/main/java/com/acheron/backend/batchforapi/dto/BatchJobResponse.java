@@ -1,6 +1,6 @@
-package com.acheron.backend.dto;
+package com.acheron.backend.batchforapi.dto;
 
-import com.acheron.backend.entity.BatchJobExecution;
+import com.acheron.backend.batchforapi.entity.BatchJobExecution;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

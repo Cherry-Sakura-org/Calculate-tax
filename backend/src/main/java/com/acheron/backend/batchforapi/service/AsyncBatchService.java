@@ -1,7 +1,7 @@
-package com.acheron.backend.service;
+package com.acheron.backend.batchforapi.service;
 
-import com.acheron.backend.entity.BatchJobExecution;
-import com.acheron.backend.repository.BatchJobExecutionRepository;
+import com.acheron.backend.batchforapi.entity.BatchJobExecution;
+import com.acheron.backend.batchforapi.repository.BatchJobExecutionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;

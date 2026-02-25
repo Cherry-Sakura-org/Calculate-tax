@@ -65,6 +65,8 @@ public class RedisConfig {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfig)
                 .withCacheConfiguration("tax-rates", taxCacheConfig)
+                .withCacheConfiguration("tax-localities", taxCacheConfig)
+                .withCacheConfiguration("tax-localities-all", taxCacheConfig)
                 .withCacheConfiguration("geolocation", taxCacheConfig)
                 .withCacheConfiguration("geolocation-mapbox", taxCacheConfig)
                 .transactionAware()

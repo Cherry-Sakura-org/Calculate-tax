@@ -1,11 +1,11 @@
-package com.acheron.backend.api;
+package com.acheron.backend.batchforapi;
 
-import com.acheron.backend.dto.BatchJobResponse;
-import com.acheron.backend.entity.BatchImportError;
-import com.acheron.backend.entity.BatchJobExecution;
-import com.acheron.backend.repository.BatchImportErrorRepository;
-import com.acheron.backend.repository.BatchJobExecutionRepository;
-import com.acheron.backend.service.AsyncBatchService;
+import com.acheron.backend.batchforapi.dto.BatchJobResponse;
+import com.acheron.backend.batchforapi.entity.BatchImportError;
+import com.acheron.backend.batchforapi.entity.BatchJobExecution;
+import com.acheron.backend.batchforapi.repository.BatchImportErrorRepository;
+import com.acheron.backend.batchforapi.repository.BatchJobExecutionRepository;
+import com.acheron.backend.batchforapi.service.AsyncBatchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

@@ -23,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserService userService;
 
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) {

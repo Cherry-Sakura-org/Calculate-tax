@@ -1,6 +1,6 @@
-package com.acheron.backend.repository;
+package com.acheron.backend.batchforapi.repository;
 
-import com.acheron.backend.entity.BatchJobExecution;
+import com.acheron.backend.batchforapi.entity.BatchJobExecution;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

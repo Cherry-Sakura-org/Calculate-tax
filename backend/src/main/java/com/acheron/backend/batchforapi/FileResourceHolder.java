@@ -1,4 +1,4 @@
-package com.acheron.backend.batch;
+package com.acheron.backend.batchforapi;
 
 import lombok.Getter;
 import lombok.Setter;
