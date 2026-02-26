@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse } from '../types/order';
+import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse, ImportResponse } from '../types/order';
 
 // API currently returns array, will return PaginatedResponse when backend pagination is ready
 type OrdersResponse = Order[] | PaginatedResponse<Order>;
@@ -27,7 +27,7 @@ export const ordersApi = {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient
-            .post<void>('/api/v1/native/import', formData, {
+            .post<ImportResponse>('/api/v1/native/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);

@@ -3,7 +3,7 @@ import { Button, Avatar, Menu, MenuItem, Typography } from '@mui/material';
 import ArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useDialog } from '../../hooks/use-dialog';
 import { useCurrentUser, useLogout } from '../../hooks/auth';
-import { AuthDialog } from './Auth-dialog';
+import { AuthDialog } from './AuthDialog';
 import { AuthUser } from '../../types/auth';
 
 function UserDropdown({ user }: { user: AuthUser }) {
@@ -34,7 +34,7 @@ export function AuthHeaderButton() {
 
   return (
     <>
-      <Button onClick={openDialog}>Login</Button>
+      <Button onClick={openDialog}>Sign In</Button>
       {mountDialog && <AuthDialog open={showDialog} onClose={closeDialog} />}
     </>
   );
