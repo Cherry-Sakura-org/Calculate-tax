@@ -35,16 +35,21 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
 
       {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
-      <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={fieldSx} />
-      <TextField label="Пароль" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth sx={fieldSx} />
+      <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={fieldSx}/>
+      <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth sx={fieldSx} />
 
       <Button type="submit" disabled={isPending}>
         {isPending ? <CircularProgress size={20} /> : 'Login'}
       </Button>
 
-      <Typography variant="body2" onClick={onSwitchToRegister} sx={{ cursor: 'pointer', color: '#00d4aa' }}>
+      <Button
+        type="button"
+        variant="text"
+        onClick={onSwitchToRegister}
+        sx={{ cursor: 'pointer', color: '#00d4aa', textTransform: 'none', alignSelf: 'flex-start', padding: 0, minWidth: 'auto' }}
+      >
         Register
-      </Typography>
+      </Button>
     </Box>
   );
 }
