@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useDialog } from '../../hooks/use-dialog';
 import NewOrderDialog from './NewOrderDialog';
+import * as styles from './new-order.styles';
 
 const NewOrderButton = () => {
     const [showNewOrderDialog, openNewOrderDialog, closeNewOrderDialog, mountNewOrderDialog] =
@@ -13,9 +14,7 @@ const NewOrderButton = () => {
                 variant='contained'
                 startIcon={<AddIcon />}
                 onClick={openNewOrderDialog}
-                sx={{
-                    whiteSpace: 'nowrap',
-                }}
+                sx={styles.newOrderButton}
             >
                 New Order
             </Button>

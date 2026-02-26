@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import { useRegister } from '../../hooks/auth';
 import { getErrorMessage } from '../../utils/auth-errors';
+import * as styles from './auth.styles';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -20,8 +21,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-      <Typography variant="h5" sx={{ color: '#fff' }}>Register</Typography>
+    <Box component="form" onSubmit={handleSubmit} sx={styles.form}>
+      <Typography variant="h5" sx={styles.registerTitle}>Register</Typography>
 
       {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
@@ -33,7 +34,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         {isPending ? <CircularProgress size={20} /> : 'Register'}
       </Button>
 
-      <Typography variant="body2" onClick={onSwitchToLogin} sx={{ cursor: 'pointer', color: '#00d4aa' }}>
+      <Typography variant="body2" onClick={onSwitchToLogin} sx={styles.switchLink}>
         Login
       </Typography>
     </Box>
