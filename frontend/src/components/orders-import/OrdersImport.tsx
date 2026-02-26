@@ -16,7 +16,7 @@ import {
     ListItemIcon,
     IconButton,
 } from '@mui/material';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useImportOrders } from '../../hooks/use-import-hook';
@@ -253,13 +253,17 @@ export const OrdersImport: React.FC = () => {
 
             {/* Success */}
             {isSuccess && data && (
-                <Alert severity='success' icon={<CheckCircleOutlineIcon />} sx={{ mt: 3 }}>
-                    <AlertTitle>Імпорт завершено</AlertTitle>
-                    Успішно імпортовано: <strong>{data.imported}</strong> замовлень.
+                <Alert
+                    severity='success'
+                    icon={<CheckCircleOutlineIcon />}
+                    sx={{ mt: 2.5 }}
+                >
+                    <AlertTitle>Import Complete</AlertTitle>
+                    Successfully imported: <strong>{data.imported}</strong> orders.
                     {data.failed > 0 && (
                         <>
                             {' '}
-                            Пропущено рядків із помилками: <strong>{data.failed}</strong>.
+                            Skipped rows with errors: <strong>{data.failed}</strong>.
                         </>
                     )}
                     {data.errors && data.errors.length > 0 && (
@@ -276,11 +280,11 @@ export const OrdersImport: React.FC = () => {
 
             {/* Error */}
             {fileError && (
-                <Alert severity='error' sx={{ mt: 1 }}>
+                <Alert severity='error' sx={{ mt: 2 }}>
                     {fileError}
                 </Alert>
             )}
-        </Box>
+        </Paper>
     );
 };
 

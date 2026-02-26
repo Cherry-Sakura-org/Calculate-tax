@@ -1,6 +1,7 @@
 import { Box, AppBar, Toolbar } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastContainer } from 'react-toastify';
+import SiteHeader from './components/layout/SiteHeader';
 import NewOrderButton from './components/manual-order-create/NewOrderButton';
 import OrdersImport from './components/orders-import/OrdersImport';
 import OrdersTable from './components/orders-table/OrdersTable';
