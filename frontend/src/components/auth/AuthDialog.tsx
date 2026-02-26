@@ -3,6 +3,7 @@ import { Dialog, DialogContent, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
+import * as styles from './auth.styles';
 
 type AuthMode = 'login' | 'register';
 
@@ -21,7 +22,7 @@ export function AuthDialog({ open, onClose }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 8, right: 8 }}>
+      <IconButton onClick={handleClose} sx={styles.closeButton}>
         <CloseIcon />
       </IconButton>
 

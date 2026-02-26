@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import { useRegister } from '../../hooks/auth';
 import { getErrorMessage } from '../../utils/auth-errors';
+import * as styles from './auth.styles';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -19,39 +20,23 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     register({ username, email, password }, { onSuccess });
   };
 
-  const fieldSx = {
-    '& .MuiOutlinedInput-root': {
-      color: '#fff',
-      '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
-      '&:hover fieldset': { borderColor: 'rgba(0,212,170,0.4)' },
-      '&.Mui-focused fieldset': { borderColor: '#00d4aa' },
-    },
-    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.45)' },
-    '& .MuiInputLabel-root.Mui-focused': { color: '#00d4aa' },
-  };
-
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-      <Typography variant="h5" sx={{ color: '#fff' }}>Register</Typography>
+    <Box component="form" onSubmit={handleSubmit} sx={styles.form}>
+      <Typography variant="h5" sx={styles.registerTitle}>Register</Typography>
 
       {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
-      <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth required sx={fieldSx} />
-      <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required sx={fieldSx} />
-      <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth required sx={fieldSx} />
+      <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth sx={styles.fieldSx} />
+      <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={styles.fieldSx} />
+      <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth sx={styles.fieldSx} />
 
       <Button type="submit" disabled={isPending}>
         {isPending ? <CircularProgress size={20} /> : 'Register'}
       </Button>
 
-      <Button
-        type="button"
-        variant="text"
-        onClick={onSwitchToLogin}
-        sx={{ cursor: 'pointer', color: '#00d4aa', textTransform: 'none', alignSelf: 'flex-start', padding: 0, minWidth: 'auto' }}
-      >
+      <Typography variant="body2" onClick={onSwitchToLogin} sx={styles.switchLink}>
         Login
-      </Button>
+      </Typography>
     </Box>
   );
 }

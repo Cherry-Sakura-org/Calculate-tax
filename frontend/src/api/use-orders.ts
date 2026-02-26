@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { ordersApi } from './orders';
 import type { OrdersParams } from '../types/order';
@@ -13,6 +13,19 @@ export const useOrders = (params: OrdersParams = {}) =>
     useQuery({
         queryKey: ordersKeys.list(params),
         queryFn: () => ordersApi.list(params),
+    });
+
+const PAGE_SIZE = 25;
+
+export const useInfiniteOrders = (params: Omit<OrdersParams, 'page' | 'size'> = {}) =>
+    useInfiniteQuery({
+        queryKey: ordersKeys.list({ ...params, size: PAGE_SIZE }),
+        queryFn: ({ pageParam }) => ordersApi.list({ ...params, page: pageParam, size: PAGE_SIZE }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            const fetched = allPages.reduce((sum, p) => sum + p.items.length, 0);
+            return fetched < lastPage.total ? allPages.length : undefined;
+        },
     });
 
 export const useCreateOrder = () => {
