@@ -15,3 +15,5 @@ databaseChangeLog:
       file: db/changelog/db-changelog-005-add-tax-breakdown-and-validity.sql
   - include:
       file: db/changelog/db-changelog-006-import-files-and-order-location.sql
+  - include:
+      file: db/changelog/db-changelog-009-add-performance-indexes.sql

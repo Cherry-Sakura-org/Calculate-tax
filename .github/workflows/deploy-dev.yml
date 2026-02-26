@@ -38,7 +38,7 @@ jobs:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USER }}
           key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.DEV_SSH_KEY_PASSPHRASE }}
+          #passphrase: ${{ secrets.DEV_SSH_KEY_PASSPHRASE }}
           script: |
             set -e
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}

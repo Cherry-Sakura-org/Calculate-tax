@@ -5,6 +5,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public final class OrderSpecification {
@@ -65,7 +66,7 @@ public final class OrderSpecification {
     }
 
     public static Specification<Order> hasCounty(String county) {
-        return (root, query, cb) -> county == null ? null : cb.equal(cb.lower(root.get("county")), county.toLowerCase());
+        return (root, query, cb) -> county == null ? null : cb.like(cb.lower(root.get("county")), "%" + county.toLowerCase() + "%");
     }
 
     public static Specification<Order> hasRegion(String region) {
@@ -74,5 +75,12 @@ public final class OrderSpecification {
 
     public static Specification<Order> hasImportFileId(UUID importFileId) {
         return (root, query, cb) -> importFileId == null ? null : cb.equal(root.get("importFile").get("id"), importFileId);
+    }
+
+    public static Specification<Order> hasImportFileIds(List<UUID> importFileIds) {
+        return (root, query, cb) -> {
+            if (importFileIds == null || importFileIds.isEmpty()) return null;
+            return root.get("importFile").get("id").in(importFileIds);
+        };
     }
 }

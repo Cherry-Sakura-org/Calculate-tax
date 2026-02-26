@@ -77,6 +77,8 @@ public class OrderApi {
                     
                     - `importFileId` — filter by import file UUID
                     
+                    - `importFileIds` — filter by multiple import file UUIDs (comma-separated)
+                    
                     **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&county=Suffolk`"""
     )
     @ApiResponses(value = {
@@ -100,10 +102,11 @@ public class OrderApi {
             @Parameter(description = "Max composite tax rate (e.g. 0.09)") @RequestParam(required = false) BigDecimal maxTaxRate,
             @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
-            @Parameter(description = "Filter by NY validity: true = within NY, false = outside NY") @RequestParam(required = false) Boolean withinNewYork,
+            @Parameter(description = "Filter by NY validity: true = within NY, false = outside NY", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "Filter by county name (case-insensitive)") @RequestParam(required = false) String county,
             @Parameter(description = "Filter by region: NYC, Long Island, Hudson Valley, Capital District, Upstate, Out of State") @RequestParam(required = false) String region,
-            @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId
+            @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId,
+            @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds
     ) {
         Specification<Order> spec = Specification.where(OrderSpecification.hasMinLatitude(minLat))
                 .and(OrderSpecification.hasMaxLatitude(maxLat))
@@ -120,7 +123,8 @@ public class OrderApi {
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCounty(county))
                 .and(OrderSpecification.hasRegion(region))
-                .and(OrderSpecification.hasImportFileId(importFileId));
+                .and(OrderSpecification.hasImportFileId(importFileId))
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         return ResponseEntity.ok(orderService.getAllOrders(spec, pageable));
     }
@@ -157,10 +161,11 @@ public class OrderApi {
             @Parameter(description = "Max tax rate") @RequestParam(required = false) BigDecimal maxTaxRate,
             @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
-            @Parameter(description = "Within New York") @RequestParam(required = false) Boolean withinNewYork,
+            @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "County name") @RequestParam(required = false) String county,
             @Parameter(description = "Region") @RequestParam(required = false) String region,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
+            @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             HttpServletResponse response
     ) throws IOException {
         Specification<Order> spec = Specification.where(OrderSpecification.hasMinLatitude(minLat))
@@ -178,7 +183,8 @@ public class OrderApi {
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCounty(county))
                 .and(OrderSpecification.hasRegion(region))
-                .and(OrderSpecification.hasImportFileId(importFileId));
+                .and(OrderSpecification.hasImportFileId(importFileId))
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         List<Order> orders = orderRepository.findAll(spec);
 
