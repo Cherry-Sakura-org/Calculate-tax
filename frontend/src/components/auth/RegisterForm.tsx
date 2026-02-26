@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import { useRegister } from '../../hooks/auth';
+import { getErrorMessage } from '../../utils/auth-errors';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -22,7 +23,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       <Typography variant="h5" sx={{ color: '#fff' }}>Register</Typography>
 
-      {error && <Alert severity="error">{(error as Error).message}</Alert>}
+      {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
       <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth />
       <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />

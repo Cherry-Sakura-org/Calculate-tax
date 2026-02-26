@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import { useLogin } from '../../hooks/auth';
+import { getErrorMessage } from '../../utils/auth-errors';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -32,7 +33,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff' }}>Auth</Typography>
 
-      {error && <Alert severity="error">{(error as Error).message}</Alert>}
+      {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
       <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={fieldSx} />
       <TextField label="Пароль" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth sx={fieldSx} />

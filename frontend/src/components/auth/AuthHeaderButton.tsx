@@ -4,7 +4,7 @@ import ArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useDialog } from '../../hooks/use-dialog';
 import { useCurrentUser, useLogout } from '../../hooks/auth';
 import { AuthDialog } from './Auth-dialog';
-import { AuthUser } from '../../api/auth';
+import { AuthUser } from '../../types/auth';
 
 function UserDropdown({ user }: { user: AuthUser }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
