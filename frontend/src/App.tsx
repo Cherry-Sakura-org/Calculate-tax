@@ -1,6 +1,5 @@
 import { AppBar, Toolbar, Stack, Button } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ToastContainer } from 'react-toastify';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import NewOrderButton from './components/manual-order-create/NewOrderButton';
@@ -50,7 +49,7 @@ function App() {
             )}
 
             <ToastContainer />
-            <ReactQueryDevtools />
+            {/* <ReactQueryDevtools initialIsOpen={false} /> */}
         </QueryClientProvider>
     );
 }

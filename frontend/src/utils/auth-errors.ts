@@ -1,7 +1,23 @@
 import { AuthError } from '../types/auth';
 
+const AUTH_ERROR_CODES = [
+    'USER_NOT_FOUND',
+    'INVALID_PASSWORD',
+    'USER_EXISTS',
+    'NETWORK_ERROR',
+    'VALIDATION_ERROR',
+    'UNKNOWN_ERROR',
+] as const;
+
 export const isAuthError = (error: unknown): error is AuthError => {
-    return error !== null && typeof error === 'object' && 'code' in error && 'message' in error;
+    return (
+        error !== null &&
+        typeof error === 'object' &&
+        'code' in error &&
+        'message' in error &&
+        typeof error.code === 'string' &&
+        AUTH_ERROR_CODES.includes(error.code as AuthError['code'])
+    );
 };
 
 export const getErrorMessage = (error: unknown): string => {

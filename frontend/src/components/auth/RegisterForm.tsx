@@ -26,9 +26,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
       {error && <Alert severity="error">{getErrorMessage(error)}</Alert>}
 
-      <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth />
-      <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
-      <TextField label="Пароль" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth />
+      <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth sx={styles.fieldSx} />
+      <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth sx={styles.fieldSx} />
+      <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth sx={styles.fieldSx} />
 
       <Button type="submit" disabled={isPending}>
         {isPending ? <CircularProgress size={20} /> : 'Register'}
