@@ -697,14 +697,14 @@
   },
   {
     "locality": "Suffolk",
-    "taxRatePercent": 8.625,
+    "taxRatePercent": 8.76,
     "reportingCode": "4711",
     "parentCounty": "Suffolk",
     "isMctdDistrict": true
   },
   {
     "locality": "Suffolk County",
-    "taxRatePercent": 8.625,
+    "taxRatePercent": 8.76,
     "reportingCode": "4711",
     "parentCounty": "Suffolk",
     "isMctdDistrict": true

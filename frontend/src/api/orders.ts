@@ -27,7 +27,7 @@ export const ordersApi = {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient
-            .post<ImportResponse>('/api/v1/native/import', formData, {
+            .post<ImportResponse>('orders/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);

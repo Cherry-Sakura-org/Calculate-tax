@@ -23,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserService userService;
 
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) {
@@ -46,7 +45,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource(@Value("${frontend.url}") String[] origins) {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(origins));
+        config.setAllowedOrigins(List.of("https://www.ya3.uk", "https://localhost:5173", "http://localhost:5173", "https://api.ya3.uk", "https://www.ya3.uk"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);

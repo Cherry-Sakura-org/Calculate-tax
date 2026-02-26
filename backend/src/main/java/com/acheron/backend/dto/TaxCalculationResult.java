@@ -20,4 +20,7 @@ public class TaxCalculationResult implements Serializable {
     private BigDecimal cityRate;
     private BigDecimal specialRates;
     private List<String> jurisdictions;
+    private boolean withinNewYork;
+    private String county;
+    private String region;
 }

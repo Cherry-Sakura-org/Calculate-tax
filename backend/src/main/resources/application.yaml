@@ -11,6 +11,9 @@ spring:
   application:
     name: backend
 
+  profiles:
+    active: dev
+
   threads:
     virtual:
       enabled: true
@@ -36,6 +39,12 @@ spring:
 
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
 
   main:
     banner-mode: off
