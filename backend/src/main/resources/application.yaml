@@ -1,0 +1,71 @@
+geocoding:
+  provider: ${GEOCODING_PROVIDER:mapbox}  # nominatim, locationiq, or mapbox
+  api-rate-limit:
+    requests-per-second: ${GEOCODING_RATE_LIMIT:10}
+  locationiq:
+    api-key: ${LOCATIONIQ_API_KEY:}
+  mapbox:
+    access-token: ${MAPBOX_ACCESS_TOKEN:}
+
+spring:
+  application:
+    name: backend
+
+  threads:
+    virtual:
+      enabled: true
+
+  mvc:
+    apiversion:
+      use:
+        header: API-Version
+      default: v1
+      required: false
+      detect-supported: true
+      supported:
+        - v1
+
+  config:
+    import: optional:file:backend/.env[.properties]
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    open-in-view: false
+
+  main:
+    banner-mode: off
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      cache-null-values: false
+      key-prefix: "iwk:"
+      use-key-prefix: true
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+
+frontend:
+  url: ${FRONTEND_URL:http://localhost:5173}

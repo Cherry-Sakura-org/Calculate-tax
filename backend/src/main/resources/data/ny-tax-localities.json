@@ -1,0 +1,877 @@
+[
+  {
+    "locality": "New York City",
+    "taxRatePercent": 8.875,
+    "reportingCode": "8081",
+    "isMctdDistrict": true,
+    "notes": "NYC comprises 5 boroughs: Bronx, Kings (Brooklyn), New York (Manhattan), Queens, Richmond (Staten Island)"
+  },
+  {
+    "locality": "Bronx",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Bronx County",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Brooklyn",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Kings",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Kings County",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Manhattan",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "New York",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "New York County",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Queens",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Queens County",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Staten Island",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Richmond",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Richmond County",
+    "seeReference": "New York City"
+  },
+  {
+    "locality": "Albany",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0181",
+    "parentCounty": "Albany"
+  },
+  {
+    "locality": "Albany County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0181",
+    "parentCounty": "Albany"
+  },
+  {
+    "locality": "Allegany",
+    "taxRatePercent": 8.5,
+    "reportingCode": "0221",
+    "parentCounty": "Allegany"
+  },
+  {
+    "locality": "Allegany County",
+    "taxRatePercent": 8.5,
+    "reportingCode": "0221",
+    "parentCounty": "Allegany"
+  },
+  {
+    "locality": "Broome",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0321",
+    "parentCounty": "Broome"
+  },
+  {
+    "locality": "Broome County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0321",
+    "parentCounty": "Broome"
+  },
+  {
+    "locality": "Cattaraugus",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0481",
+    "parentCounty": "Cattaraugus",
+    "notes": "Except Olean and Salamanca cities"
+  },
+  {
+    "locality": "Cattaraugus County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0481",
+    "parentCounty": "Cattaraugus"
+  },
+  {
+    "locality": "Olean",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0441",
+    "parentCounty": "Cattaraugus"
+  },
+  {
+    "locality": "Salamanca",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0431",
+    "parentCounty": "Cattaraugus"
+  },
+  {
+    "locality": "Cayuga",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0511",
+    "parentCounty": "Cayuga",
+    "notes": "Except Auburn city"
+  },
+  {
+    "locality": "Cayuga County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0511",
+    "parentCounty": "Cayuga"
+  },
+  {
+    "locality": "Auburn",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0561",
+    "parentCounty": "Cayuga"
+  },
+  {
+    "locality": "Chautauqua",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0651",
+    "parentCounty": "Chautauqua"
+  },
+  {
+    "locality": "Chautauqua County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0651",
+    "parentCounty": "Chautauqua"
+  },
+  {
+    "locality": "Chemung",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0711",
+    "parentCounty": "Chemung"
+  },
+  {
+    "locality": "Chemung County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0711",
+    "parentCounty": "Chemung"
+  },
+  {
+    "locality": "Chenango",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0861",
+    "parentCounty": "Chenango",
+    "notes": "Except Norwich city"
+  },
+  {
+    "locality": "Chenango County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0861",
+    "parentCounty": "Chenango"
+  },
+  {
+    "locality": "Norwich",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0831",
+    "parentCounty": "Chenango"
+  },
+  {
+    "locality": "Clinton",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0921",
+    "parentCounty": "Clinton"
+  },
+  {
+    "locality": "Clinton County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "0921",
+    "parentCounty": "Clinton"
+  },
+  {
+    "locality": "Columbia",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1021",
+    "parentCounty": "Columbia"
+  },
+  {
+    "locality": "Columbia County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1021",
+    "parentCounty": "Columbia"
+  },
+  {
+    "locality": "Cortland",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1131",
+    "parentCounty": "Cortland"
+  },
+  {
+    "locality": "Cortland County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1131",
+    "parentCounty": "Cortland"
+  },
+  {
+    "locality": "Delaware",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1221",
+    "parentCounty": "Delaware"
+  },
+  {
+    "locality": "Delaware County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1221",
+    "parentCounty": "Delaware"
+  },
+  {
+    "locality": "Dutchess",
+    "taxRatePercent": 8.125,
+    "reportingCode": "1311",
+    "parentCounty": "Dutchess",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Dutchess County",
+    "taxRatePercent": 8.125,
+    "reportingCode": "1311",
+    "parentCounty": "Dutchess",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Erie",
+    "taxRatePercent": 8.75,
+    "reportingCode": "1451",
+    "parentCounty": "Erie"
+  },
+  {
+    "locality": "Erie County",
+    "taxRatePercent": 8.75,
+    "reportingCode": "1451",
+    "parentCounty": "Erie"
+  },
+  {
+    "locality": "Essex",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1521",
+    "parentCounty": "Essex"
+  },
+  {
+    "locality": "Essex County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1521",
+    "parentCounty": "Essex"
+  },
+  {
+    "locality": "Franklin",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1621",
+    "parentCounty": "Franklin"
+  },
+  {
+    "locality": "Franklin County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1621",
+    "parentCounty": "Franklin"
+  },
+  {
+    "locality": "Fulton",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1791",
+    "parentCounty": "Fulton",
+    "notes": "Except Gloversville and Johnstown cities"
+  },
+  {
+    "locality": "Fulton County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1791",
+    "parentCounty": "Fulton"
+  },
+  {
+    "locality": "Gloversville",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1741",
+    "parentCounty": "Fulton"
+  },
+  {
+    "locality": "Johnstown",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1751",
+    "parentCounty": "Fulton"
+  },
+  {
+    "locality": "Genesee",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1811",
+    "parentCounty": "Genesee"
+  },
+  {
+    "locality": "Genesee County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1811",
+    "parentCounty": "Genesee"
+  },
+  {
+    "locality": "Greene",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1911",
+    "parentCounty": "Greene"
+  },
+  {
+    "locality": "Greene County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "1911",
+    "parentCounty": "Greene"
+  },
+  {
+    "locality": "Hamilton",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2011",
+    "parentCounty": "Hamilton"
+  },
+  {
+    "locality": "Hamilton County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2011",
+    "parentCounty": "Hamilton"
+  },
+  {
+    "locality": "Herkimer",
+    "taxRatePercent": 8.25,
+    "reportingCode": "2121",
+    "parentCounty": "Herkimer"
+  },
+  {
+    "locality": "Herkimer County",
+    "taxRatePercent": 8.25,
+    "reportingCode": "2121",
+    "parentCounty": "Herkimer"
+  },
+  {
+    "locality": "Jefferson",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2221",
+    "parentCounty": "Jefferson"
+  },
+  {
+    "locality": "Jefferson County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2221",
+    "parentCounty": "Jefferson"
+  },
+  {
+    "locality": "Lewis",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2321",
+    "parentCounty": "Lewis"
+  },
+  {
+    "locality": "Lewis County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2321",
+    "parentCounty": "Lewis"
+  },
+  {
+    "locality": "Livingston",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2411",
+    "parentCounty": "Livingston"
+  },
+  {
+    "locality": "Livingston County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2411",
+    "parentCounty": "Livingston"
+  },
+  {
+    "locality": "Madison",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2511",
+    "parentCounty": "Madison",
+    "notes": "Except Oneida city"
+  },
+  {
+    "locality": "Madison County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2511",
+    "parentCounty": "Madison"
+  },
+  {
+    "locality": "Oneida",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2541",
+    "parentCounty": "Madison"
+  },
+  {
+    "locality": "Monroe",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2611",
+    "parentCounty": "Monroe"
+  },
+  {
+    "locality": "Monroe County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2611",
+    "parentCounty": "Monroe"
+  },
+  {
+    "locality": "Montgomery",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2781",
+    "parentCounty": "Montgomery"
+  },
+  {
+    "locality": "Montgomery County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2781",
+    "parentCounty": "Montgomery"
+  },
+  {
+    "locality": "Nassau",
+    "taxRatePercent": 8.625,
+    "reportingCode": "2811",
+    "parentCounty": "Nassau",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Nassau County",
+    "taxRatePercent": 8.625,
+    "reportingCode": "2811",
+    "parentCounty": "Nassau",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Niagara",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2911",
+    "parentCounty": "Niagara"
+  },
+  {
+    "locality": "Niagara County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "2911",
+    "parentCounty": "Niagara"
+  },
+  {
+    "locality": "Oneida County",
+    "taxRatePercent": 8.75,
+    "reportingCode": "3010",
+    "parentCounty": "Oneida",
+    "notes": "Except Rome and Utica cities"
+  },
+  {
+    "locality": "Rome",
+    "taxRatePercent": 8.75,
+    "reportingCode": "3015",
+    "parentCounty": "Oneida"
+  },
+  {
+    "locality": "Utica",
+    "taxRatePercent": 8.75,
+    "reportingCode": "3018",
+    "parentCounty": "Oneida"
+  },
+  {
+    "locality": "Onondaga",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3121",
+    "parentCounty": "Onondaga"
+  },
+  {
+    "locality": "Onondaga County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3121",
+    "parentCounty": "Onondaga"
+  },
+  {
+    "locality": "Ontario",
+    "taxRatePercent": 7.5,
+    "reportingCode": "3211",
+    "parentCounty": "Ontario"
+  },
+  {
+    "locality": "Ontario County",
+    "taxRatePercent": 7.5,
+    "reportingCode": "3211",
+    "parentCounty": "Ontario"
+  },
+  {
+    "locality": "Orange",
+    "taxRatePercent": 8.125,
+    "reportingCode": "3321",
+    "parentCounty": "Orange",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Orange County",
+    "taxRatePercent": 8.125,
+    "reportingCode": "3321",
+    "parentCounty": "Orange",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Orleans",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3481",
+    "parentCounty": "Orleans"
+  },
+  {
+    "locality": "Orleans County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3481",
+    "parentCounty": "Orleans"
+  },
+  {
+    "locality": "Oswego",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3501",
+    "parentCounty": "Oswego",
+    "notes": "Except Oswego city"
+  },
+  {
+    "locality": "Oswego County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3501",
+    "parentCounty": "Oswego"
+  },
+  {
+    "locality": "Oswego city",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3561",
+    "parentCounty": "Oswego"
+  },
+  {
+    "locality": "Otsego",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3621",
+    "parentCounty": "Otsego"
+  },
+  {
+    "locality": "Otsego County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3621",
+    "parentCounty": "Otsego"
+  },
+  {
+    "locality": "Putnam",
+    "taxRatePercent": 8.375,
+    "reportingCode": "3731",
+    "parentCounty": "Putnam",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Putnam County",
+    "taxRatePercent": 8.375,
+    "reportingCode": "3731",
+    "parentCounty": "Putnam",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Rensselaer",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3881",
+    "parentCounty": "Rensselaer"
+  },
+  {
+    "locality": "Rensselaer County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "3881",
+    "parentCounty": "Rensselaer"
+  },
+  {
+    "locality": "Rockland",
+    "taxRatePercent": 8.375,
+    "reportingCode": "3921",
+    "parentCounty": "Rockland",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Rockland County",
+    "taxRatePercent": 8.375,
+    "reportingCode": "3921",
+    "parentCounty": "Rockland",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "St. Lawrence",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4091",
+    "parentCounty": "St. Lawrence",
+    "notes": "Except Ogdensburg city"
+  },
+  {
+    "locality": "St. Lawrence County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4091",
+    "parentCounty": "St. Lawrence"
+  },
+  {
+    "locality": "Ogdensburg",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4012",
+    "parentCounty": "St. Lawrence"
+  },
+  {
+    "locality": "Saratoga",
+    "taxRatePercent": 7.0,
+    "reportingCode": "4111",
+    "parentCounty": "Saratoga",
+    "notes": "Except Saratoga Springs city"
+  },
+  {
+    "locality": "Saratoga County",
+    "taxRatePercent": 7.0,
+    "reportingCode": "4111",
+    "parentCounty": "Saratoga"
+  },
+  {
+    "locality": "Saratoga Springs",
+    "taxRatePercent": 7.0,
+    "reportingCode": "4131",
+    "parentCounty": "Saratoga"
+  },
+  {
+    "locality": "Schenectady",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4241",
+    "parentCounty": "Schenectady"
+  },
+  {
+    "locality": "Schenectady County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4241",
+    "parentCounty": "Schenectady"
+  },
+  {
+    "locality": "Schoharie",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4321",
+    "parentCounty": "Schoharie"
+  },
+  {
+    "locality": "Schoharie County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4321",
+    "parentCounty": "Schoharie"
+  },
+  {
+    "locality": "Schuyler",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4411",
+    "parentCounty": "Schuyler"
+  },
+  {
+    "locality": "Schuyler County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4411",
+    "parentCounty": "Schuyler"
+  },
+  {
+    "locality": "Seneca",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4511",
+    "parentCounty": "Seneca"
+  },
+  {
+    "locality": "Seneca County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4511",
+    "parentCounty": "Seneca"
+  },
+  {
+    "locality": "Steuben",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4691",
+    "parentCounty": "Steuben"
+  },
+  {
+    "locality": "Steuben County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4691",
+    "parentCounty": "Steuben"
+  },
+  {
+    "locality": "Suffolk",
+    "taxRatePercent": 8.625,
+    "reportingCode": "4711",
+    "parentCounty": "Suffolk",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Suffolk County",
+    "taxRatePercent": 8.625,
+    "reportingCode": "4711",
+    "parentCounty": "Suffolk",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Sullivan",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4821",
+    "parentCounty": "Sullivan"
+  },
+  {
+    "locality": "Sullivan County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4821",
+    "parentCounty": "Sullivan"
+  },
+  {
+    "locality": "Tioga",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4921",
+    "parentCounty": "Tioga"
+  },
+  {
+    "locality": "Tioga County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "4921",
+    "parentCounty": "Tioga"
+  },
+  {
+    "locality": "Tompkins",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5081",
+    "parentCounty": "Tompkins",
+    "notes": "Except Ithaca city"
+  },
+  {
+    "locality": "Tompkins County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5081",
+    "parentCounty": "Tompkins"
+  },
+  {
+    "locality": "Ithaca",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5021",
+    "parentCounty": "Tompkins"
+  },
+  {
+    "locality": "Ulster",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5111",
+    "parentCounty": "Ulster"
+  },
+  {
+    "locality": "Ulster County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5111",
+    "parentCounty": "Ulster"
+  },
+  {
+    "locality": "Warren",
+    "taxRatePercent": 7.0,
+    "reportingCode": "5281",
+    "parentCounty": "Warren",
+    "notes": "Except Glens Falls city"
+  },
+  {
+    "locality": "Warren County",
+    "taxRatePercent": 7.0,
+    "reportingCode": "5281",
+    "parentCounty": "Warren"
+  },
+  {
+    "locality": "Glens Falls",
+    "taxRatePercent": 7.0,
+    "reportingCode": "5211",
+    "parentCounty": "Warren"
+  },
+  {
+    "locality": "Washington",
+    "taxRatePercent": 7.0,
+    "reportingCode": "5311",
+    "parentCounty": "Washington"
+  },
+  {
+    "locality": "Washington County",
+    "taxRatePercent": 7.0,
+    "reportingCode": "5311",
+    "parentCounty": "Washington"
+  },
+  {
+    "locality": "Wayne",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5421",
+    "parentCounty": "Wayne"
+  },
+  {
+    "locality": "Wayne County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5421",
+    "parentCounty": "Wayne"
+  },
+  {
+    "locality": "Westchester",
+    "taxRatePercent": 8.375,
+    "reportingCode": "5581",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true,
+    "notes": "Except Mount Vernon, New Rochelle, White Plains, and Yonkers cities"
+  },
+  {
+    "locality": "Westchester County",
+    "taxRatePercent": 8.375,
+    "reportingCode": "5581",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Mount Vernon",
+    "taxRatePercent": 8.375,
+    "reportingCode": "5521",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "New Rochelle",
+    "taxRatePercent": 8.375,
+    "reportingCode": "6861",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "White Plains",
+    "taxRatePercent": 8.375,
+    "reportingCode": "6513",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Yonkers",
+    "taxRatePercent": 8.875,
+    "reportingCode": "6511",
+    "parentCounty": "Westchester",
+    "isMctdDistrict": true
+  },
+  {
+    "locality": "Wyoming",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5621",
+    "parentCounty": "Wyoming"
+  },
+  {
+    "locality": "Wyoming County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5621",
+    "parentCounty": "Wyoming"
+  },
+  {
+    "locality": "Yates",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5721",
+    "parentCounty": "Yates"
+  },
+  {
+    "locality": "Yates County",
+    "taxRatePercent": 8.0,
+    "reportingCode": "5721",
+    "parentCounty": "Yates"
+  }
+]
