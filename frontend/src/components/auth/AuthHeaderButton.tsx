@@ -34,7 +34,7 @@ export function AuthHeaderButton() {
 
   return (
     <>
-      <Button onClick={openDialog}>Login</Button>
+      <Button onClick={openDialog}>Sign In</Button>
       {mountDialog && <AuthDialog open={showDialog} onClose={closeDialog} />}
     </>
   );

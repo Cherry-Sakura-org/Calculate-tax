@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ordersApi } from '../api/orders';
+import type { ImportResponse } from '../types/order';
 
 export const useImportOrders = () => {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation({
+  const mutation = useMutation<ImportResponse, Error, File>({
     mutationFn: (file: File) => ordersApi.import(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });

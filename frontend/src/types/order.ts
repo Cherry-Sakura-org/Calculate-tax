@@ -37,3 +37,9 @@ export interface CreateOrderPayload {
     longitude: number;
     subtotal: number;
 }
+
+export interface ImportResponse {
+    imported: number;
+    failed: number;
+    errors?: string[];
+}
