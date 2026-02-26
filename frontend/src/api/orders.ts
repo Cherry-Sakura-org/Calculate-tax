@@ -1,12 +1,25 @@
 import { apiClient } from './client';
 import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse } from '../types/order';
 
+// API currently returns array, will return PaginatedResponse when backend pagination is ready
+type OrdersResponse = Order[] | PaginatedResponse<Order>;
+
+const isPaginated = (data: OrdersResponse): data is PaginatedResponse<Order> =>
+    data && typeof data === 'object' && 'content' in data && 'page' in data;
+
 export const ordersApi = {
-    list: (params: OrdersParams) =>
-        apiClient.get<PaginatedResponse<Order>>('/orders', { params }).then((r) => r.data),
+    list: async (params: OrdersParams): Promise<{ items: Order[]; total: number }> => {
+        const response = await apiClient.get<OrdersResponse>('/orders', { params });
+        const data = response.data;
+
+        if (isPaginated(data)) {
+            return { items: data.content, total: data.page.totalElements };
+        }
+        // Fallback: API returns plain array
+        return { items: data, total: data.length };
+    },
 
     create: async (payload: CreateOrderPayload) => {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate network delay
         return apiClient.post<Order>('/orders', payload).then((r) => r.data);
     },
 
