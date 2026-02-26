@@ -9,9 +9,11 @@ import {
     Paper,
     Stack,
     Chip,
+    alpha,
 } from '@mui/material';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { useImportOrders } from '../../hooks/use-import-hook';
 import { validateCsvFile } from '../../utils/file-utils';
 
@@ -58,98 +60,145 @@ export const OrdersImport: React.FC = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 520, mx: 'auto', p: 3 }}>
-            <Typography variant='h5' fontWeight={600} gutterBottom>
-                Імпорт замовлень
-            </Typography>
-            <Typography variant='body2' color='text.secondary' mb={3}>
-                Завантажте CSV файл для масового імпорту замовлень
-            </Typography>
-
-            {/* Dropzone */}
-            <Paper
-                variant='outlined'
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                onClick={() => inputRef.current?.click()}
-                sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    borderStyle: 'dashed',
-                    borderColor: dragOver ? 'primary.main' : 'divider',
-                    bgcolor: dragOver ? 'action.hover' : 'background.paper',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                        borderColor: 'primary.main',
-                        bgcolor: 'action.hover',
-                    },
-                }}
-            >
-                <input
-                    ref={inputRef}
-                    type='file'
-                    accept='.csv'
-                    hidden
-                    onChange={handleInputChange}
-                />
-                <UploadFileIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                <Typography variant='body1' fontWeight={500}>
-                    Перетягніть CSV файл сюди
-                </Typography>
-                <Typography variant='body2' color='text.secondary'>
-                    або натисніть для вибору
-                </Typography>
-            </Paper>
-
-            {/* Selected file */}
-            {selectedFile && (
-                <Stack direction='row' alignItems='center' spacing={1} mt={2}>
-                    <Chip
-                        label={selectedFile.name}
-                        size='small'
-                        color='primary'
-                        variant='outlined'
-                        onDelete={handleReset}
-                    />
-                    <Typography variant='caption' color='text.secondary'>
-                        {(selectedFile.size / 1024).toFixed(1)} KB
-                    </Typography>
-                </Stack>
-            )}
-
-            {/* Action buttons */}
-            <Stack direction='row' spacing={2} mt={3}>
-                <Button
-                    variant='contained'
-                    onClick={handleSubmit}
-                    disabled={!selectedFile || isLoading}
-                    startIcon={
-                        isLoading ? <CircularProgress size={18} color='inherit' /> : undefined
-                    }
+        <Paper
+            sx={{
+                p: { xs: 2.5, md: 3.5 },
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '2px',
+                    background: (t) =>
+                        `linear-gradient(90deg, transparent, ${t.palette.primary.main}, transparent)`,
+                    opacity: 0.5,
+                },
+            }}
+        >
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems='flex-start'>
+                {/* Dropzone */}
+                <Box
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOver(true);
+                    }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => inputRef.current?.click()}
+                    sx={{
+                        flex: 1,
+                        p: 3,
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        borderRadius: 2.5,
+                        border: '2px dashed',
+                        borderColor: (t) =>
+                            dragOver
+                                ? t.palette.primary.main
+                                : alpha(t.palette.divider, 1),
+                        bgcolor: (t) =>
+                            dragOver
+                                ? alpha(t.palette.primary.main, 0.06)
+                                : 'transparent',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                            borderColor: (t) => alpha(t.palette.primary.main, 0.5),
+                            bgcolor: (t) => alpha(t.palette.primary.main, 0.03),
+                            '& .upload-icon': {
+                                transform: 'translateY(-4px)',
+                                color: 'primary.main',
+                            },
+                        },
+                    }}
                 >
-                    {isLoading ? 'Імпортуємо...' : 'Імпортувати'}
-                </Button>
-                {(isSuccess || isError) && (
-                    <Button variant='text' onClick={handleReset}>
-                        Скинути
-                    </Button>
-                )}
+                    <input
+                        ref={inputRef}
+                        type='file'
+                        accept='.csv'
+                        hidden
+                        onChange={handleInputChange}
+                    />
+                    <CloudUploadIcon
+                        className='upload-icon'
+                        sx={{
+                            fontSize: 40,
+                            color: 'text.disabled',
+                            mb: 1,
+                            transition: 'all 0.3s ease',
+                        }}
+                    />
+                    <Typography variant='body1' fontWeight={500} sx={{ mb: 0.5 }}>
+                        Drop CSV file here
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.8rem' }}>
+                        or click to browse
+                    </Typography>
+                </Box>
+
+                {/* Right side: file info + actions */}
+                <Stack
+                    spacing={2}
+                    sx={{
+                        minWidth: { md: 220 },
+                        alignSelf: { xs: 'stretch', md: 'center' },
+                    }}
+                >
+                    {selectedFile ? (
+                        <Chip
+                            icon={<InsertDriveFileIcon sx={{ fontSize: '16px !important' }} />}
+                            label={`${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`}
+                            size='small'
+                            color='primary'
+                            variant='outlined'
+                            onDelete={handleReset}
+                            sx={{ justifyContent: 'flex-start' }}
+                        />
+                    ) : (
+                        <Typography variant='caption' color='text.secondary'>
+                            No file selected
+                        </Typography>
+                    )}
+
+                    <Stack direction='row' spacing={1.5}>
+                        <Button
+                            variant='contained'
+                            size='small'
+                            onClick={handleSubmit}
+                            disabled={!selectedFile || isLoading}
+                            startIcon={
+                                isLoading ? (
+                                    <CircularProgress size={16} color='inherit' />
+                                ) : undefined
+                            }
+                            sx={{ flex: 1 }}
+                        >
+                            {isLoading ? 'Importing...' : 'Import'}
+                        </Button>
+                        {(isSuccess || isError) && (
+                            <Button variant='outlined' size='small' onClick={handleReset}>
+                                Reset
+                            </Button>
+                        )}
+                    </Stack>
+                </Stack>
             </Stack>
 
             {/* Success */}
             {isSuccess && data && (
-                <Alert severity='success' icon={<CheckCircleOutlineIcon />} sx={{ mt: 3 }}>
-                    <AlertTitle>Імпорт завершено</AlertTitle>
-                    Успішно імпортовано: <strong>{data.imported}</strong> замовлень.
+                <Alert
+                    severity='success'
+                    icon={<CheckCircleOutlineIcon />}
+                    sx={{ mt: 2.5 }}
+                >
+                    <AlertTitle>Import Complete</AlertTitle>
+                    Successfully imported: <strong>{data.imported}</strong> orders.
                     {data.failed > 0 && (
                         <>
                             {' '}
-                            Пропущено рядків із помилками: <strong>{data.failed}</strong>.
+                            Skipped rows with errors: <strong>{data.failed}</strong>.
                         </>
                     )}
                     {data.errors && data.errors.length > 0 && (
@@ -166,11 +215,11 @@ export const OrdersImport: React.FC = () => {
 
             {/* Error */}
             {fileError && (
-                <Alert severity='error' sx={{ mt: 1 }}>
+                <Alert severity='error' sx={{ mt: 2 }}>
                     {fileError}
                 </Alert>
             )}
-        </Box>
+        </Paper>
     );
 };
 
