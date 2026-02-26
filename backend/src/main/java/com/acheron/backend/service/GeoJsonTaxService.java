@@ -53,6 +53,20 @@ public class GeoJsonTaxService {
             "Staten Island", "Richmond County"
     );
 
+    private static final java.util.Set<String> NYC_COUNTIES = java.util.Set.of(
+            "New York County", "Kings County", "Queens County", "Bronx County", "Richmond County"
+    );
+    private static final java.util.Set<String> LONG_ISLAND_COUNTIES = java.util.Set.of(
+            "Nassau County", "Suffolk County"
+    );
+    private static final java.util.Set<String> HUDSON_VALLEY_COUNTIES = java.util.Set.of(
+            "Westchester County", "Rockland County", "Putnam County", "Dutchess County",
+            "Orange County", "Sullivan County", "Ulster County"
+    );
+    private static final java.util.Set<String> CAPITAL_DISTRICT_COUNTIES = java.util.Set.of(
+            "Albany County", "Rensselaer County", "Saratoga County", "Schenectady County"
+    );
+
     private final ConcurrentHashMap<Long, TaxCalculationResult> coordinateCache = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -212,12 +226,23 @@ public class GeoJsonTaxService {
                     .cityRate(BigDecimal.ZERO)
                     .specialRates(BigDecimal.ZERO)
                     .jurisdictions(List.of("Out of New York State"))
+                    .withinNewYork(false)
+                    .county(null)
+                    .region("Out of State")
                     .build();
             coordinateCache.put(cacheKey, outOfState);
             return outOfState;
         }
 
+        String fullCountyName = countyName;
+        if (fullCountyName != null && !fullCountyName.endsWith(" County")) {
+            fullCountyName = fullCountyName + " County";
+        }
+        String region = classifyRegion(fullCountyName, boroughOpt.isPresent());
+
         TaxCalculationResult result = buildTaxResult(localityName, countyName);
+        result.setCounty(stripCountySuffix(fullCountyName));
+        result.setRegion(region);
 
         coordinateCache.put(cacheKey, result);
         return result;
@@ -292,7 +317,17 @@ public class GeoJsonTaxService {
                 .cityRate(cityRate)
                 .specialRates(specialRate)
                 .jurisdictions(jurisdictions)
+                .withinNewYork(true)
                 .build();
+    }
+
+    private String classifyRegion(String fullCountyName, boolean isBorough) {
+        if (fullCountyName == null) return "Unknown";
+        if (isBorough || NYC_COUNTIES.contains(fullCountyName)) return "NYC";
+        if (LONG_ISLAND_COUNTIES.contains(fullCountyName)) return "Long Island";
+        if (HUDSON_VALLEY_COUNTIES.contains(fullCountyName)) return "Hudson Valley";
+        if (CAPITAL_DISTRICT_COUNTIES.contains(fullCountyName)) return "Capital District";
+        return "Upstate";
     }
 
     private String stripCountySuffix(String name) {

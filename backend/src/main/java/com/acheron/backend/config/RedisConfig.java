@@ -62,12 +62,23 @@ public class RedisConfig {
                         RedisSerializationContext.SerializationPair.fromSerializer(new GenericJacksonJsonRedisSerializer(objectMapper))
                 );
 
+        RedisCacheConfiguration dashboardCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10))
+                .disableCachingNullValues()
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer())
+                )
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new GenericJacksonJsonRedisSerializer(objectMapper))
+                );
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfig)
                 .withCacheConfiguration("tax-rates", taxCacheConfig)
                 .withCacheConfiguration("tax-localities-all", taxCacheConfig)
                 .withCacheConfiguration("geolocation", taxCacheConfig)
                 .withCacheConfiguration("geolocation-mapbox", taxCacheConfig)
+                .withCacheConfiguration("map-county-data", dashboardCacheConfig)
                 .transactionAware()
                 .build();
     }

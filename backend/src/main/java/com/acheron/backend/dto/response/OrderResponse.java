@@ -24,6 +24,13 @@ public record OrderResponse(
 
         LocalDateTime timestamp,
 
+        @JsonProperty("is_within_new_york")
+        Boolean isWithinNewYork,
+
+        String county,
+
+        String region,
+
         TaxBreakdown taxBreakdown,
 
         List<String> jurisdictions
@@ -66,6 +73,9 @@ public record OrderResponse(
                 order.getTaxAmount(),
                 order.getTotalAmount(),
                 order.getOrderedAt(),
+                order.getIsWithinNewYork(),
+                order.getCounty(),
+                order.getRegion(),
                 breakdownDto,
                 jurisdictionsList
         );

@@ -1,14 +1,16 @@
 package com.acheron.backend.api;
 
+import com.acheron.backend.dto.response.MapCountyResponse;
 import com.acheron.backend.entity.Order;
 import com.acheron.backend.repository.OrderRepository;
+import com.acheron.backend.service.DashboardService;
 import com.acheron.backend.service.GeoJsonTaxService;
+import com.acheron.backend.specification.OrderSpecification;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,14 +28,36 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Tag(name = "Map", description = "Map data API — GeoJSON orders with filters, boundary layers, stats, CSV preview")
+@Tag(name = "Map", description = "Map data API — per-county aggregated data, GeoJSON orders, boundary layers, CSV preview")
 @RestController
-@RequestMapping("/api/v1/map")
+@RequestMapping("/map")
 @RequiredArgsConstructor
 public class MapApi {
 
     private final OrderRepository orderRepository;
     private final GeoJsonTaxService geoJsonTaxService;
+    private final DashboardService dashboardService;
+
+    @Operation(
+            summary = "Get per-county aggregated map data (cached)",
+            description = """
+                    Returns per-county aggregated data for map visualization (cached for 10 minutes).
+                    Each entry includes:
+                    - **county** — county name
+                    - **order_count** — number of orders in this county
+                    - **total_subtotal** — sum of subtotals (netto)
+                    - **total_tax** — sum of tax amounts
+                    - **total_revenue** — sum of totals (brutto)
+                    - **average_tax_rate** — average composite tax rate
+                    - **average_order_value** — average total per order
+                    
+                    Sorted by order count descending. Use `POST /dashboard/cache/evict` to force refresh."""
+    )
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "Per-county aggregated data"))
+    @GetMapping("/counties")
+    public ResponseEntity<List<MapCountyResponse>> getCountyData() {
+        return ResponseEntity.ok(dashboardService.getMapCountyData());
+    }
 
     @Operation(summary = "Get orders as GeoJSON with filters + aggregate summary",
             description = """
@@ -60,8 +84,17 @@ public class MapApi {
             @Parameter(description = "To date (ISO, e.g. 2024-12-31T23:59:59)") @RequestParam(required = false) LocalDateTime to,
             @Parameter(description = "Max features to return (default 10000)") @RequestParam(defaultValue = "10000") int limit
     ) {
-        Specification<Order> spec = buildSpec(minLat, maxLat, minLon, maxLon,
-                minSubtotal, maxSubtotal, minTaxRate, maxTaxRate, from, to);
+        Specification<Order> spec = Specification
+                .where(OrderSpecification.hasMinLatitude(minLat))
+                .and(OrderSpecification.hasMaxLatitude(maxLat))
+                .and(OrderSpecification.hasMinLongitude(minLon))
+                .and(OrderSpecification.hasMaxLongitude(maxLon))
+                .and(OrderSpecification.hasMinSubtotal(minSubtotal))
+                .and(OrderSpecification.hasMaxSubtotal(maxSubtotal))
+                .and(OrderSpecification.hasMinTaxRate(minTaxRate))
+                .and(OrderSpecification.hasMaxTaxRate(maxTaxRate))
+                .and(OrderSpecification.orderedAfter(from))
+                .and(OrderSpecification.orderedBefore(to));
 
         List<Order> orders = orderRepository.findAll(spec);
 
@@ -70,40 +103,6 @@ public class MapApi {
         }
 
         return ResponseEntity.ok(toGeoJsonWithSummary(orders));
-    }
-
-    @Operation(summary = "Get order stats summary",
-            description = "Aggregate stats: total orders, revenue, tax, avg value, orders-by-county breakdown. Supports same filters as /orders.")
-    @GetMapping("/orders/stats")
-    public ResponseEntity<Map<String, Object>> getOrderStats(
-            @RequestParam(required = false) BigDecimal minLat,
-            @RequestParam(required = false) BigDecimal maxLat,
-            @RequestParam(required = false) BigDecimal minLon,
-            @RequestParam(required = false) BigDecimal maxLon,
-            @RequestParam(required = false) BigDecimal minSubtotal,
-            @RequestParam(required = false) BigDecimal maxSubtotal,
-            @RequestParam(required = false) BigDecimal minTaxRate,
-            @RequestParam(required = false) BigDecimal maxTaxRate,
-            @RequestParam(required = false) LocalDateTime from,
-            @RequestParam(required = false) LocalDateTime to
-    ) {
-        Specification<Order> spec = buildSpec(minLat, maxLat, minLon, maxLon,
-                minSubtotal, maxSubtotal, minTaxRate, maxTaxRate, from, to);
-
-        List<Order> orders = orderRepository.findAll(spec);
-
-        Map<String, Object> summary = computeSummary(orders);
-
-        Map<String, Long> byCounty = new LinkedHashMap<>();
-        for (Order o : orders) {
-            String county = geoJsonTaxService.findCounty(
-                    o.getLatitude().doubleValue(), o.getLongitude().doubleValue()
-            ).orElse("Out of NY / Unknown");
-            byCounty.merge(county, 1L, Long::sum);
-        }
-        summary.put("ordersByCounty", byCounty);
-
-        return ResponseEntity.ok(summary);
     }
 
     @Operation(summary = "Get NY county boundaries GeoJSON")
@@ -185,38 +184,8 @@ public class MapApi {
     @PostMapping("/cache/clear")
     public ResponseEntity<Map<String, String>> clearCache() {
         geoJsonTaxService.clearCache();
-        return ResponseEntity.ok(Map.of("message", "Cache cleared"));
+        return ResponseEntity.ok(Map.of("message", "GeoJSON tax cache cleared"));
     }
-
-    // --- Specification builder ---
-
-    private Specification<Order> buildSpec(BigDecimal minLat, BigDecimal maxLat,
-                                           BigDecimal minLon, BigDecimal maxLon,
-                                           BigDecimal minSubtotal, BigDecimal maxSubtotal,
-                                           BigDecimal minTaxRate, BigDecimal maxTaxRate,
-                                           LocalDateTime from, LocalDateTime to) {
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (minLat != null) predicates.add(cb.greaterThanOrEqualTo(root.get("latitude"), minLat));
-            if (maxLat != null) predicates.add(cb.lessThanOrEqualTo(root.get("latitude"), maxLat));
-            if (minLon != null) predicates.add(cb.greaterThanOrEqualTo(root.get("longitude"), minLon));
-            if (maxLon != null) predicates.add(cb.lessThanOrEqualTo(root.get("longitude"), maxLon));
-
-            if (minSubtotal != null) predicates.add(cb.greaterThanOrEqualTo(root.get("subtotal"), minSubtotal));
-            if (maxSubtotal != null) predicates.add(cb.lessThanOrEqualTo(root.get("subtotal"), maxSubtotal));
-
-            if (minTaxRate != null) predicates.add(cb.greaterThanOrEqualTo(root.get("compositeTaxRate"), minTaxRate));
-            if (maxTaxRate != null) predicates.add(cb.lessThanOrEqualTo(root.get("compositeTaxRate"), maxTaxRate));
-
-            if (from != null) predicates.add(cb.greaterThanOrEqualTo(root.get("orderedAt"), from));
-            if (to != null) predicates.add(cb.lessThanOrEqualTo(root.get("orderedAt"), to));
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
-    // --- GeoJSON builders ---
 
     private Map<String, Object> toGeoJsonWithSummary(List<Order> orders) {
         List<Map<String, Object>> features = new ArrayList<>(orders.size());
@@ -236,20 +205,16 @@ public class MapApi {
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
         BigDecimal totalSubtotal = BigDecimal.ZERO;
-        BigDecimal minSubtotal = null;
-        BigDecimal maxSubtotal = null;
+        BigDecimal minSub = null;
+        BigDecimal maxSub = null;
 
         for (Order o : orders) {
             totalRevenue = totalRevenue.add(o.getTotalAmount());
             totalTax = totalTax.add(o.getTaxAmount());
             totalSubtotal = totalSubtotal.add(o.getSubtotal());
 
-            if (minSubtotal == null || o.getSubtotal().compareTo(minSubtotal) < 0) {
-                minSubtotal = o.getSubtotal();
-            }
-            if (maxSubtotal == null || o.getSubtotal().compareTo(maxSubtotal) > 0) {
-                maxSubtotal = o.getSubtotal();
-            }
+            if (minSub == null || o.getSubtotal().compareTo(minSub) < 0) minSub = o.getSubtotal();
+            if (maxSub == null || o.getSubtotal().compareTo(maxSub) > 0) maxSub = o.getSubtotal();
         }
 
         int count = orders.size();
@@ -263,8 +228,8 @@ public class MapApi {
         summary.put("totalTax", totalTax);
         summary.put("totalSubtotal", totalSubtotal);
         summary.put("averageOrderValue", avgOrderValue);
-        summary.put("minSubtotal", minSubtotal);
-        summary.put("maxSubtotal", maxSubtotal);
+        summary.put("minSubtotal", minSub);
+        summary.put("maxSubtotal", maxSub);
         return summary;
     }
 
@@ -275,6 +240,7 @@ public class MapApi {
         properties.put("taxAmount", order.getTaxAmount());
         properties.put("totalAmount", order.getTotalAmount());
         properties.put("compositeTaxRate", order.getCompositeTaxRate());
+        properties.put("isWithinNewYork", order.getIsWithinNewYork());
         properties.put("orderedAt", order.getOrderedAt());
 
         if (order.getTaxBreakdown() != null) {

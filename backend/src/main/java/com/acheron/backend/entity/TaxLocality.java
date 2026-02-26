@@ -44,6 +44,18 @@ public class TaxLocality extends AbstractAuditableEntity {
     @Column(name = "parent_county", length = 100)
     private String parentCounty;
 
+    @Column(name = "state_rate", precision = 8, scale = 5)
+    private BigDecimal stateRate;
+
+    @Column(name = "county_rate", precision = 8, scale = 5)
+    private BigDecimal countyRate;
+
+    @Column(name = "city_rate", precision = 8, scale = 5)
+    private BigDecimal cityRate;
+
+    @Column(name = "special_rates", precision = 8, scale = 5)
+    private BigDecimal specialRates;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 }

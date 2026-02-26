@@ -1,9 +1,11 @@
 package com.acheron.backend.service;
 
 import com.acheron.backend.dto.TaxCalculationResult;
+import com.acheron.backend.entity.ImportFile;
 import com.acheron.backend.entity.Order;
 import com.acheron.backend.entity.OrderTaxBreakdown;
 import com.acheron.backend.entity.User;
+import com.acheron.backend.repository.ImportFileRepository;
 import com.acheron.backend.repository.OrderRepository;
 import com.acheron.backend.repository.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -39,6 +41,7 @@ public class NativeImportService {
     private final GeoJsonTaxService geoJsonTaxService;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final ImportFileRepository importFileRepository;
     private final PlatformTransactionManager transactionManager;
     private final EntityManager entityManager;
 
@@ -48,12 +51,23 @@ public class NativeImportService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]");
 
     public record ImportResult(
+            UUID importFileId,
+            String filename,
             int totalRecords,
             int successfulRecords,
             int failedRecords,
+            int outOfNyRecords,
             long durationMs,
             double recordsPerSecond,
-            List<ImportError> errors
+            List<ImportError> errors,
+            List<OutOfNyRow> outOfNyRows
+    ) {}
+
+    public record OutOfNyRow(
+            int lineNumber,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            BigDecimal subtotal
     ) {}
 
     public record ImportError(
@@ -82,7 +96,7 @@ public class NativeImportService {
 
         if (totalRecords == 0) {
             log.warn("CSV file has no data rows!");
-            return new ImportResult(0, 0, 0, 0, 0, List.of());
+            return new ImportResult(null, file.getOriginalFilename(), 0, 0, 0, 0, 0, 0, List.of(), List.of());
         }
 
         UUID userId = userRepository.findByUsername("acheron")
@@ -91,6 +105,7 @@ public class NativeImportService {
 
         AtomicInteger failCount = new AtomicInteger();
         CopyOnWriteArrayList<ImportError> errors = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<OutOfNyRow> outOfNyRows = new CopyOnWriteArrayList<>();
 
         List<List<CsvLine>> processBatches = partition(parsedLines, PROCESS_BATCH_SIZE);
         log.info("Phase 1: Submitting {} batches for parallel tax calculation...", processBatches.size());
@@ -100,7 +115,7 @@ public class NativeImportService {
             List<Future<List<ParsedOrder>>> futures = new ArrayList<>(processBatches.size());
 
             for (List<CsvLine> batch : processBatches) {
-                futures.add(executor.submit(() -> parseAndCalcTax(batch, errors, failCount)));
+                futures.add(executor.submit(() -> parseAndCalcTax(batch, errors, failCount, outOfNyRows)));
             }
 
             for (Future<List<ParsedOrder>> future : futures) {
@@ -114,6 +129,8 @@ public class NativeImportService {
 
         log.info("Phase 1 done: {} parsed orders ready, {} failed during parsing/tax calc",
                 allParsed.size(), failCount.get());
+
+        ImportFile importFileEntity = createImportFileRecord(file, userId, totalRecords);
 
         TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
         List<List<ParsedOrder>> saveBatches = partition(allParsed, SAVE_BATCH_SIZE);
@@ -131,7 +148,7 @@ public class NativeImportService {
 
                     List<Order> orders = new ArrayList<>(batch.size());
                     for (ParsedOrder po : batch) {
-                        orders.add(toOrder(po, userRef));
+                        orders.add(toOrder(po, userRef, importFileEntity));
                     }
                     orderRepository.saveAll(orders);
                     entityManager.flush();
@@ -161,13 +178,25 @@ public class NativeImportService {
                 ? new ArrayList<>(errors.subList(0, 100))
                 : new ArrayList<>(errors);
 
+        List<OutOfNyRow> truncatedOutOfNy = outOfNyRows.size() > 200
+                ? new ArrayList<>(outOfNyRows.subList(0, 200))
+                : new ArrayList<>(outOfNyRows);
+
+        int outOfNyCount = outOfNyRows.size();
+
+        updateImportFileRecord(importFileEntity, successCount.get(), failCount.get(), outOfNyCount, durationMs, recordsPerSecond);
+
         return new ImportResult(
+                importFileEntity.getId(),
+                file.getOriginalFilename(),
                 totalRecords,
                 successCount.get(),
                 failCount.get(),
+                outOfNyCount,
                 durationMs,
                 Math.round(recordsPerSecond * 10.0) / 10.0,
-                truncatedErrors
+                truncatedErrors,
+                truncatedOutOfNy
         );
     }
 
@@ -199,7 +228,8 @@ public class NativeImportService {
 
     private List<ParsedOrder> parseAndCalcTax(List<CsvLine> batch,
                                               CopyOnWriteArrayList<ImportError> errors,
-                                              AtomicInteger failCount) {
+                                              AtomicInteger failCount,
+                                              CopyOnWriteArrayList<OutOfNyRow> outOfNyRows) {
         List<ParsedOrder> results = new ArrayList<>(batch.size());
 
         for (CsvLine csvLine : batch) {
@@ -221,6 +251,10 @@ public class NativeImportService {
 
                 TaxCalculationResult taxResult = geoJsonTaxService.calculateTax(latitude, longitude);
 
+                if (!taxResult.isWithinNewYork()) {
+                    outOfNyRows.add(new OutOfNyRow(csvLine.lineNumber(), latitude, longitude, subtotal));
+                }
+
                 results.add(new ParsedOrder(latitude, longitude, subtotal, timestamp, taxResult));
             } catch (Exception e) {
                 failCount.incrementAndGet();
@@ -237,7 +271,39 @@ public class NativeImportService {
         return results;
     }
 
-    private Order toOrder(ParsedOrder po, User user) {
+    private ImportFile createImportFileRecord(MultipartFile file, UUID userId, int totalRecords) {
+        TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+        return txTemplate.execute(status -> {
+            User userRef = entityManager.getReference(User.class, userId);
+            ImportFile importFile = ImportFile.builder()
+                    .originalFilename(file.getOriginalFilename())
+                    .fileSizeBytes(file.getSize())
+                    .totalRecords(totalRecords)
+                    .successfulRecords(0)
+                    .failedRecords(0)
+                    .outOfNyRecords(0)
+                    .importedAt(LocalDateTime.now())
+                    .importedByUser(userRef)
+                    .status("PROCESSING")
+                    .build();
+            return importFileRepository.save(importFile);
+        });
+    }
+
+    private void updateImportFileRecord(ImportFile importFile, int success, int failed, int outOfNy, long durationMs, double rps) {
+        TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+        txTemplate.executeWithoutResult(status -> {
+            importFile.setSuccessfulRecords(success);
+            importFile.setFailedRecords(failed);
+            importFile.setOutOfNyRecords(outOfNy);
+            importFile.setDurationMs(durationMs);
+            importFile.setRecordsPerSecond(Math.round(rps * 10.0) / 10.0);
+            importFile.setStatus(failed > 0 ? "COMPLETED_WITH_ERRORS" : "COMPLETED");
+            importFileRepository.save(importFile);
+        });
+    }
+
+    private Order toOrder(ParsedOrder po, User user, ImportFile importFile) {
         TaxCalculationResult taxResult = po.taxResult();
 
         BigDecimal taxAmount = po.subtotal()
@@ -264,6 +330,10 @@ public class NativeImportService {
                 .compositeTaxRate(taxResult.getCompositeTaxRate())
                 .taxAmount(taxAmount)
                 .totalAmount(totalAmount)
+                .isWithinNewYork(taxResult.isWithinNewYork())
+                .county(taxResult.getCounty())
+                .region(taxResult.getRegion())
+                .importFile(importFile)
                 .createdByAdmin(user)
                 .build();
 

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,11 @@ public class OrderService {
 
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable)
+                .map(OrderResponse::fromEntity);
+    }
+
+    public Page<OrderResponse> getAllOrders(Specification<Order> spec, Pageable pageable) {
+        return orderRepository.findAll(spec, pageable)
                 .map(OrderResponse::fromEntity);
     }
 
@@ -67,6 +73,9 @@ public class OrderService {
                 .compositeTaxRate(taxResult.getCompositeTaxRate())
                 .taxAmount(taxAmount)
                 .totalAmount(totalAmount)
+                .isWithinNewYork(taxResult.isWithinNewYork())
+                .county(taxResult.getCounty())
+                .region(taxResult.getRegion())
                 .createdByAdmin(currentUser)
                 .build();
 

@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -113,6 +116,10 @@ public class TaxLocalityService {
     @Cacheable(cacheNames = CACHE_ALL)
     public List<TaxLocality> getAllLocalities() {
         return taxLocalityRepository.findAll();
+    }
+
+    public Page<TaxLocality> getAllLocalities(Pageable pageable) {
+        return taxLocalityRepository.findAll(pageable);
     }
 
     private String normalizeLocalityName(String name) {
