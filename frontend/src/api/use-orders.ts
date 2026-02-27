@@ -17,11 +17,12 @@ export const useOrders = (params: OrdersParams = {}) =>
 
 const PAGE_SIZE = 25;
 
-export const useInfiniteOrders = (params: Omit<OrdersParams, 'page' | 'size'> = {}) =>
+export const useInfiniteOrders = (params: Omit<OrdersParams, 'page' | 'size'> = {}, enabled = true) =>
     useInfiniteQuery({
         queryKey: ordersKeys.list({ ...params, size: PAGE_SIZE }),
         queryFn: ({ pageParam }) => ordersApi.list({ ...params, page: pageParam, size: PAGE_SIZE }),
         initialPageParam: 0,
+        enabled,
         getNextPageParam: (lastPage, allPages) => {
             const fetched = allPages.reduce((sum, p) => sum + p.items.length, 0);
             return fetched < lastPage.total ? allPages.length : undefined;

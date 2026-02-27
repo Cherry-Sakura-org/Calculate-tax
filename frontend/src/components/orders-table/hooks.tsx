@@ -9,6 +9,7 @@ import { DateTime } from 'luxon';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useInfiniteOrders } from '../../api/use-orders';
+import { useCurrentUser } from '../../hooks/auth';
 import type { Order } from '../../types/order';
 import * as styles from './table-hooks.styles';
 
@@ -157,7 +158,9 @@ const columns = [
 const ROW_HEIGHT_ESTIMATE = 49;
 
 export const useOrdersTableController = () => {
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders();
+    const { data: currentUser, isLoading: isAuthLoading } = useCurrentUser();
+    const isAuthenticated = !!currentUser;
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders({}, isAuthenticated);
 
     const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
     const totalRows = data?.pages[0]?.total ?? 0;
@@ -194,7 +197,8 @@ export const useOrdersTableController = () => {
     return {
         table,
         rows,
-        isLoading,
+        isLoading: isLoading || isAuthLoading,
+        isAuthenticated,
         totalRows,
         tableContainerRef,
         rowVirtualizer,

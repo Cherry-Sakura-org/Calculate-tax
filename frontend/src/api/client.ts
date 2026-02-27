@@ -1,9 +1,14 @@
 import axios, { AxiosError } from 'axios';
 import { toast } from 'react-toastify';
 
+export const API_BASE = 'http://localhost:8080';
+
 export const apiClient = axios.create({
-    baseURL: 'https://api.ya3.uk',
+    baseURL: API_BASE,
     headers: { 'Content-Type': 'application/json' },
+    withCredentials: true,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
 });
 
 apiClient.interceptors.response.use(
@@ -18,6 +23,8 @@ apiClient.interceptors.response.use(
                     .map(([k, v]) => `${k}: ${v}`)
                     .join('\n');
                 toast.error(`${message}\n${fields}`, { autoClose: 6000 });
+            } else if (status === 401) {
+                // silent — auth flow handles this
             } else if (status >= 500) {
                 toast.error(`Server error: ${message}`);
             } else if (status >= 400) {

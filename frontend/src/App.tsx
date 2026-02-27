@@ -7,9 +7,11 @@ import OrdersImportDialog from './components/orders-import/OrdersImport';
 import OrdersTable from './components/orders-table/OrdersTable';
 import AuthHeaderButton from './components/auth/AuthHeaderButton';
 import { useDialog } from './hooks/use-dialog';
+import { useOAuthCallback } from './hooks/use-oauth-callback';
 import * as styles from './app.styles';
 
 function App() {
+    useOAuthCallback();
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
 
     return (
