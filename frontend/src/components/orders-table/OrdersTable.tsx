@@ -1,6 +1,7 @@
 import { flexRender } from '@tanstack/react-table';
 import {
     Box,
+    Button,
     CircularProgress,
     Table,
     TableBody,
@@ -12,6 +13,12 @@ import {
     Typography,
     Stack,
 } from '@mui/material';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import NewOrderButton from '../manual-order-create/NewOrderButton';
+import OrdersImportDialog from '../orders-import/OrdersImport';
+import { useDialog } from '../../hooks/use-dialog';
+import { useDownloadOrdersCsv } from '../../api/use-orders';
 import { useOrdersTableController } from './hooks';
 import * as styles from './orders-table.styles';
 
@@ -20,11 +27,15 @@ const OrdersTable = () => {
         table,
         rows,
         isLoading,
+        totalRows,
         tableContainerRef,
         rowVirtualizer,
         isFetchingNextPage,
         hasNextPage,
     } = useOrdersTableController();
+
+    const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
+    const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
 
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
@@ -38,7 +49,37 @@ const OrdersTable = () => {
     );
 
     return (
+        <>
         <Paper sx={styles.paper}>
+            {/* Toolbar */}
+            <Stack direction='row' alignItems='center' justifyContent='space-between' sx={styles.toolbar}>
+                <Typography variant='body2' color='text.secondary'>
+                    {isLoading ? 'Loading...' : `${totalRows} items`}
+                </Typography>
+                <Stack direction='row' spacing={1.5}>
+                    <Button
+                        variant='outlined'
+                        size='small'
+                        startIcon={<FileUploadIcon />}
+                        onClick={openImportDialog}
+                        sx={styles.actionButton}
+                    >
+                        Import CSV
+                    </Button>
+                    <NewOrderButton />
+                    <Button
+                        variant='contained'
+                        size='small'
+                        startIcon={<FileDownloadIcon />}
+                        onClick={() => downloadCsv()}
+                        disabled={isDownloading}
+                        sx={styles.actionButton}
+                    >
+                        {isDownloading ? 'Downloading...' : 'Download CSV'}
+                    </Button>
+                </Stack>
+            </Stack>
+
             {/* Fixed header */}
             <TableContainer sx={styles.headerContainer}>
                 <Table size='small' sx={styles.table}>
@@ -201,6 +242,11 @@ const OrdersTable = () => {
                 )}
             </TableContainer>
         </Paper>
+
+        {mountImportDialog && (
+            <OrdersImportDialog open={showImportDialog} onClose={closeImportDialog} />
+        )}
+        </>
     );
 };
 

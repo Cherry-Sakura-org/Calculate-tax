@@ -16,8 +16,9 @@ export const toolbar: SxProps<Theme> = {
     px: { xs: 2, sm: 3 },
 };
 
-export const actionButton: SxProps<Theme> = {
-    whiteSpace: 'nowrap',
+export const logo: SxProps<Theme> = {
+    color: 'text.primary',
+    fontWeight: 700,
 };
 
 export const content: SxProps<Theme> = {

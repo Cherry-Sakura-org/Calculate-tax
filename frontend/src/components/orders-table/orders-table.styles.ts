@@ -1,6 +1,16 @@
 import type { SxProps, Theme } from '@mui/material';
 import { alpha } from '@mui/material';
 
+export const toolbar: SxProps<Theme> = {
+    px: 2,
+    py: 1,
+    flexShrink: 0,
+};
+
+export const actionButton: SxProps<Theme> = {
+    whiteSpace: 'nowrap',
+};
+
 export const paper: SxProps<Theme> = {
     display: 'flex',
     flexDirection: 'column',
@@ -15,6 +25,10 @@ export const headerContainer: SxProps<Theme> = {
     overflow: 'hidden',
     flexShrink: 0,
     bgcolor: 'transparent',
+    borderRadius: 0,
+    '& th': {
+        borderRadius: '0 !important',
+    },
 };
 
 export const bodyContainer: SxProps<Theme> = {
@@ -37,6 +51,7 @@ export const table: SxProps<Theme> = {
 export const headerCell: SxProps<Theme> = {
     py: 1,
     bgcolor: '#e8efe9 !important',
+    borderRadius: '0 !important',
 };
 
 export const emptyStateCell: SxProps<Theme> = {
