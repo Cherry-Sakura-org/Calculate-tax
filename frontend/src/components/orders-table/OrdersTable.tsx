@@ -1,116 +1,57 @@
-import { Fragment } from 'react';
+import { useState } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     Box,
-    Collapse,
+    Button,
     CircularProgress,
-    IconButton,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
-    TablePagination,
     TableRow,
     Paper,
     Typography,
     Stack,
-    alpha,
-    Chip,
 } from '@mui/material';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import type { Order } from '../../types/order';
-import { useOrdersTableController, formatRate } from './hooks';
-import TableFilters from './TableFilters';
-
-const TaxBreakdown = ({ order }: { order: Order }) => (
-    <Box
-        sx={{
-            py: 2,
-            px: 3,
-            my: 1,
-            borderRadius: 2,
-            bgcolor: (t) => alpha(t.palette.primary.main, 0.03),
-            border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.08)}`,
-        }}
-    >
-        <Typography
-            variant='overline'
-            sx={{
-                display: 'block',
-                mb: 1.5,
-                color: 'primary.main',
-            }}
-        >
-            Tax Rate Breakdown
-        </Typography>
-        <Stack direction='row' spacing={3} flexWrap='wrap' useFlexGap>
-            {[
-                { label: 'State', value: order.taxBreakdown.state_rate },
-                { label: 'County', value: order.taxBreakdown.county_rate },
-                { label: 'City', value: order.taxBreakdown.city_rate },
-                { label: 'Special', value: order.taxBreakdown.special_rates },
-            ].map((item) => (
-                <Box key={item.label} sx={{ minWidth: 100 }}>
-                    <Typography
-                        variant='caption'
-                        sx={{
-                            display: 'block',
-                            color: 'text.secondary',
-                            fontSize: '0.65rem',
-                            mb: 0.3,
-                        }}
-                    >
-                        {item.label}
-                    </Typography>
-                    <Typography
-                        variant='body2'
-                        sx={{
-                            fontFamily: '"JetBrains Mono", monospace',
-                            fontWeight: 500,
-                            color: 'text.primary',
-                        }}
-                    >
-                        {formatRate(item.value)}
-                    </Typography>
-                </Box>
-            ))}
-        </Stack>
-        {order.jurisdictions?.length > 0 && (
-            <Stack direction='row' spacing={0.5} mt={1.5} flexWrap='wrap' useFlexGap>
-                {order.jurisdictions.map((j) => (
-                    <Chip
-                        key={j}
-                        label={j}
-                        size='small'
-                        sx={{
-                            height: 22,
-                            fontSize: '0.65rem',
-                            bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                            color: 'primary.main',
-                            border: 'none',
-                        }}
-                    />
-                ))}
-            </Stack>
-        )}
-    </Box>
-);
+import DownloadIcon from '@mui/icons-material/Download';
+import { toast } from 'react-toastify';
+import { ordersApi } from '../../api/orders';
+import { useOrdersTableController } from './hooks';
+import * as styles from './orders-table.styles';
 
 const OrdersTable = () => {
-    const { table, isLoading, totalRows } = useOrdersTableController();
+    const { table, rows, isLoading, isAuthenticated, tableContainerRef, rowVirtualizer, isFetchingNextPage, hasNextPage, totalRows } =
+        useOrdersTableController();
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportCsv = async () => {
+        setIsExporting(true);
+        try {
+            await ordersApi.exportCsv();
+            toast.success('CSV downloaded');
+        } catch {
+            toast.error('Failed to export CSV');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    if (!isAuthenticated && !isLoading) {
+        return (
+            <Paper sx={styles.loadingPaper}>
+                <Stack alignItems='center' spacing={2}>
+                    <Typography variant='body2' color='text.secondary'>
+                        Please sign in to view orders
+                    </Typography>
+                </Stack>
+            </Paper>
+        );
+    }
 
     if (isLoading) {
         return (
-            <Paper
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    py: 8,
-                    animation: 'pulseGlow 2s infinite',
-                }}
-            >
+            <Paper sx={styles.loadingPaper}>
                 <Stack alignItems='center' spacing={2}>
                     <CircularProgress size={32} thickness={3} />
                     <Typography variant='caption' color='text.secondary'>
@@ -121,60 +62,47 @@ const OrdersTable = () => {
         );
     }
 
+    const virtualRows = rowVirtualizer.getVirtualItems();
+
     return (
-        <Paper
-            sx={{
-                overflow: 'hidden',
-                '&:hover': {
-                    borderColor: (t) => alpha(t.palette.primary.main, 0.15),
-                },
-            }}
-        >
-            <TableFilters />
-            <TableContainer>
-                <Table size='small'>
+        <Paper sx={styles.paper}>
+            <TableContainer ref={tableContainerRef} sx={styles.tableContainer}>
+                <Table size='small' stickyHeader sx={styles.table}>
+                    <colgroup>
+                        {table.getAllColumns().map((col) => {
+                            const w = (col.columnDef.meta as { width?: number })?.width;
+                            return <col key={col.id} style={w ? { width: w } : undefined} />;
+                        })}
+                    </colgroup>
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                <TableCell
-                                    padding='checkbox'
-                                    sx={{
-                                        bgcolor: (t) =>
-                                            `${alpha(t.palette.primary.main, 0.04)} !important`,
-                                    }}
-                                />
-                                {headerGroup.headers.map((header) =>
-                                    header.id === 'expand' ? null : (
-                                        <TableCell key={header.id}>
-                                            {flexRender(
-                                                header.column.columnDef.header,
-                                                header.getContext(),
-                                            )}
-                                        </TableCell>
-                                    ),
-                                )}
+                                {headerGroup.headers.map((header) => (
+                                    <TableCell key={header.id} sx={styles.headerCell}>
+                                        {flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext(),
+                                        )}
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         ))}
                     </TableHead>
                     <TableBody>
-                        {table.getRowModel().rows.length === 0 ? (
+                        {rows.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={table.getAllColumns().length + 1}
+                                    colSpan={table.getAllColumns().length}
                                     align='center'
                                 >
-                                    <Box sx={{ py: 6 }}>
-                                        <Typography
-                                            variant='body2'
-                                            color='text.secondary'
-                                            sx={{ fontFamily: '"DM Sans", sans-serif' }}
-                                        >
+                                    <Box sx={styles.emptyState}>
+                                        <Typography variant='body2' color='text.secondary'>
                                             No orders found
                                         </Typography>
                                         <Typography
                                             variant='caption'
                                             color='text.secondary'
-                                            sx={{ mt: 0.5, display: 'block', opacity: 0.6 }}
+                                            sx={styles.emptySubtext}
                                         >
                                             Create a new order or import a CSV file
                                         </Typography>
@@ -182,82 +110,101 @@ const OrdersTable = () => {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            table.getRowModel().rows.map((row, index) => (
-                                <Fragment key={row.id}>
-                                    <TableRow
-                                        hover
-                                        sx={{
-                                            animation: 'fadeIn 0.3s ease-out',
-                                            animationFillMode: 'backwards',
-                                            animationDelay: `${index * 0.03}s`,
-                                            '& > *': {
-                                                borderBottom: row.getIsExpanded()
-                                                    ? 'unset'
-                                                    : undefined,
-                                            },
-                                        }}
-                                    >
-                                        <TableCell padding='checkbox'>
-                                            <IconButton
-                                                size='small'
-                                                onClick={row.getToggleExpandedHandler()}
-                                                sx={{
-                                                    transition: 'transform 0.2s ease',
-                                                    transform: row.getIsExpanded()
-                                                        ? 'rotate(180deg)'
-                                                        : 'rotate(0deg)',
-                                                }}
-                                            >
-                                                <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
-                                            </IconButton>
-                                        </TableCell>
-                                        {row
-                                            .getVisibleCells()
-                                            .map((cell) =>
-                                                cell.column.id === 'expand' ? null : (
-                                                    <TableCell key={cell.id}>
+                            <>
+                                {virtualRows[0]?.start > 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={table.getAllColumns().length}
+                                            style={{ height: virtualRows[0].start, padding: 0, border: 'none' }}
+                                        />
+                                    </tr>
+                                )}
+                                {virtualRows.map((virtualRow) => {
+                                    const row = rows[virtualRow.index];
+                                    const isOutOfState = row.original.jurisdictions?.includes('Out of New York State');
+                                    return (
+                                        <TableRow
+                                            key={row.id}
+                                            hover
+                                            data-index={virtualRow.index}
+                                            ref={rowVirtualizer.measureElement}
+                                            sx={isOutOfState ? styles.outOfStateRow : styles.dataRow}
+                                        >
+                                            {row.getVisibleCells().map((cell) => {
+                                                const highlighted = (
+                                                    cell.column.columnDef.meta as {
+                                                        highlighted?: boolean;
+                                                    }
+                                                )?.highlighted;
+                                                return (
+                                                    <TableCell
+                                                        key={cell.id}
+                                                        sx={
+                                                            highlighted && !isOutOfState
+                                                                ? styles.highlightedCell
+                                                                : undefined
+                                                        }
+                                                    >
                                                         {flexRender(
                                                             cell.column.columnDef.cell,
                                                             cell.getContext(),
                                                         )}
                                                     </TableCell>
-                                                ),
-                                            )}
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={table.getAllColumns().length + 1}
-                                            sx={{
-                                                py: 0,
-                                                borderBottom: row.getIsExpanded()
-                                                    ? undefined
-                                                    : 'none',
-                                            }}
-                                        >
-                                            <Collapse
-                                                in={row.getIsExpanded()}
-                                                timeout='auto'
-                                                unmountOnExit
-                                            >
-                                                <TaxBreakdown order={row.original} />
-                                            </Collapse>
-                                        </TableCell>
-                                    </TableRow>
-                                </Fragment>
-                            ))
+                                                );
+                                            })}
+                                        </TableRow>
+                                    );
+                                })}
+                                {(() => {
+                                    const lastItem = virtualRows[virtualRows.length - 1];
+                                    const paddingBottom = lastItem
+                                        ? rowVirtualizer.getTotalSize() - lastItem.end
+                                        : 0;
+                                    return paddingBottom > 0 ? (
+                                        <tr>
+                                            <td
+                                                colSpan={table.getAllColumns().length}
+                                                style={{ height: paddingBottom, padding: 0, border: 'none' }}
+                                            />
+                                        </tr>
+                                    ) : null;
+                                })()}
+                            </>
                         )}
                     </TableBody>
                 </Table>
+
+                {/* Infinite scroll status + export */}
+                <Box sx={{ ...styles.scrollStatus, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        {isFetchingNextPage && (
+                            <Stack direction='row' alignItems='center' spacing={1}>
+                                <CircularProgress size={18} thickness={3} />
+                                <Typography variant='caption' color='text.secondary'>
+                                    Loading more...
+                                </Typography>
+                            </Stack>
+                        )}
+                        {!hasNextPage && rows.length > 0 && (
+                            <Typography variant='caption' color='text.disabled'>
+                                All {totalRows} orders loaded
+                            </Typography>
+                        )}
+                    </Box>
+                    {rows.length > 0 && (
+                        <Button
+                            size='small'
+                            variant='outlined'
+                            startIcon={isExporting ? <CircularProgress size={14} thickness={3} /> : <DownloadIcon />}
+                            onClick={handleExportCsv}
+                            disabled={isExporting}
+                            sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                        >
+                            Export CSV
+                        </Button>
+                    )}
+                </Box>
             </TableContainer>
-            <TablePagination
-                component='div'
-                count={totalRows}
-                page={table.getState().pagination.pageIndex}
-                rowsPerPage={table.getState().pagination.pageSize}
-                onPageChange={(_e, page) => table.setPageIndex(page)}
-                onRowsPerPageChange={(e) => table.setPageSize(Number(e.target.value))}
-                rowsPerPageOptions={[5, 10, 25, 50]}
-            />
         </Paper>
     );
 };

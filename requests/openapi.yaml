@@ -1,0 +1,1421 @@
+openapi: 3.1.0
+info:
+  title: Instant Wellness Kits API
+  description: |
+    REST API for order management with automatic NY State tax calculation.
+
+    ## Key Features
+    - **Native GeoJSON tax calculation** — point-in-polygon lookup, no external API calls
+    - **Tax breakdown** — state, county, city, and special district rates
+    - **Region classification** — NYC, Long Island, Hudson Valley, Capital District, Upstate
+    - **High-performance CSV import** — virtual threads, ~11k records/sec
+    - **Multi-file upload** — import multiple CSVs in one request
+    - **CSV export** — download filtered orders as CSV
+    - **Import file tracking** — per-file metadata with out-of-NY detection
+    - **Dashboard analytics** — cached aggregated stats with region/county breakdown
+    - **Map visualization** — GeoJSON order points, county aggregations, boundary layers
+
+    ## Authentication
+    Currently all endpoints are open (no auth required).
+
+    ## Pagination
+    All list endpoints support Spring Data pagination:
+    - `page` — 0-indexed page number (default: 0)
+    - `size` — page size (default: 20)
+    - `sort` — field + direction, e.g. `sort=totalAmount,desc`
+
+    ## Regions
+    Orders within NY are classified into regions:
+    | Region | Description |
+    |--------|-------------|
+    | `NYC` | Five boroughs (Manhattan, Brooklyn, Queens, Bronx, Staten Island) |
+    | `Long Island` | Nassau, Suffolk counties |
+    | `Hudson Valley` | Westchester, Rockland, Putnam, Dutchess, Orange, Sullivan, Ulster |
+    | `Capital District` | Albany, Rensselaer, Saratoga, Schenectady |
+    | `Upstate` | All other NY counties |
+    | `Out of State` | Coordinates outside New York State |
+
+    ## Tech Stack
+    Spring Boot 4.0 · PostgreSQL · Redis · GeoJSON (JTS Topology Suite)
+  contact:
+    name: Acheron Team
+    email: support@acheron.com
+  version: "2.0"
+servers:
+- url: https://api.ya3.uk
+  description: Production server
+- url: http://localhost:8080
+  description: Local development server
+tags:
+- name: Map
+  description: "GeoJSON order points, per-county aggregations, NY boundary layers,\
+    \ CSV preview"
+- name: Map
+  description: "Map data API — per-county aggregated data, GeoJSON orders, boundary\
+    \ layers, CSV preview"
+- name: Tax Localities
+  description: "Manage NY State tax locality data — rates, counties, special districts"
+- name: Tax Localities
+  description: "NY State tax locality data — rates, counties, special districts, reload/import"
+- name: Batch Import
+  description: IGNORE!!! USE NATIVE IMPORT!!! Async CSV import with real-time progress
+    tracking via SSE
+- name: Orders
+  description: "CRUD, filtering, CSV import/export, and import file tracking for orders"
+- name: Orders
+  description: Order management API with native GeoJSON tax calculation
+- name: Dashboard
+  description: Aggregated statistics for the dashboard — cached with 10min TTL
+- name: Dashboard
+  description: "Aggregated analytics — totals, top counties, region breakdown, tax\
+    \ rate distribution"
+paths:
+  /tax-localities:
+    get:
+      tags:
+      - Tax Localities
+      summary: Get all tax localities (paginated)
+      description: "Returns paginated NY State tax localities with rates, reporting\
+        \ codes, and district flags. Use `page`, `size`, `sort` query params (e.g.\
+        \ `?page=0&size=20&sort=locality,asc`)."
+      operationId: getAllTaxLocalities
+      parameters:
+      - name: pageable
+        in: query
+        description: "Pagination parameters (page, size, sort)"
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Paginated list of tax localities
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModelTaxLocality"
+    post:
+      tags:
+      - Tax Localities
+      summary: Create a single tax locality
+      operationId: createTaxLocality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxLocality"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TaxLocality"
+  /tax-localities/reload:
+    post:
+      tags:
+      - Tax Localities
+      summary: Reload tax localities from built-in JSON
+      description: Deletes ALL existing tax localities and reloads from the bundled
+        ny-tax-localities.json file. Clears all caches.
+      operationId: reloadFromJson
+      responses:
+        "200":
+          description: Reloaded successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "500":
+          description: Failed to reload
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /tax-localities/import:
+    post:
+      tags:
+      - Tax Localities
+      summary: Import tax localities from custom JSON body
+      description: Deletes ALL existing tax localities and replaces them with the
+        provided JSON array. Clears all caches.
+      operationId: importFromJson
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: Imported successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "400":
+          description: Invalid JSON
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders:
+    get:
+      tags:
+      - Orders
+      summary: Get all orders (filtered + paginated)
+      description: |-
+        Retrieves a paginated list of orders with optional filters.
+
+        **Pagination** (query params):
+
+        - `page` — page number (0-indexed, default 0)
+
+        - `size` — page size (default 20)
+
+        - `sort` — sort field + direction, e.g. `sort=totalAmount,desc`
+
+        **Filters** (all optional):
+
+        - `minLat` / `maxLat` — bounding box latitude range
+
+        - `minLon` / `maxLon` — bounding box longitude range
+
+        - `minSubtotal` / `maxSubtotal` — subtotal range (before tax)
+
+        - `minTotal` / `maxTotal` — total amount range (after tax)
+
+        - `minTaxRate` / `maxTaxRate` — composite tax rate range (e.g. 0.04 to 0.09)
+
+        - `from` / `to` — date range (ISO 8601, e.g. `2024-01-01T00:00:00`)
+
+        - `withinNewYork` — `true` = valid NY orders only, `false` = out-of-state only
+
+        - `county` — filter by county name (case-insensitive, e.g. `Suffolk`)
+
+        - `region` — filter by region: `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
+
+        - `importFileId` — filter by import file UUID
+
+        - `importFileIds` — filter by multiple import file UUIDs (comma-separated)
+
+        **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&county=Suffolk`
+      operationId: getAllOrders
+      parameters:
+      - name: pageable
+        in: query
+        description: "Pagination (page, size, sort)"
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      - name: minLat
+        in: query
+        description: Min latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        description: Max latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        description: Min longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        description: Max longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        description: Min subtotal (before tax)
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        description: Max subtotal (before tax)
+        required: false
+        schema:
+          type: number
+      - name: minTotal
+        in: query
+        description: Min total amount (after tax)
+        required: false
+        schema:
+          type: number
+      - name: maxTotal
+        in: query
+        description: Max total amount (after tax)
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        description: Min composite tax rate (e.g. 0.04)
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        description: Max composite tax rate (e.g. 0.09)
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        description: From date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: To date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: withinNewYork
+        in: query
+        description: "Filter by NY validity: true = within NY, false = outside NY"
+        required: false
+        schema:
+          type: boolean
+      - name: county
+        in: query
+        description: Filter by county name (case-insensitive)
+        required: false
+        schema:
+          type: string
+      - name: region
+        in: query
+        description: "Filter by region: NYC, Long Island, Hudson Valley, Capital District,\
+          \ Upstate, Out of State"
+        required: false
+        schema:
+          type: string
+      - name: importFileId
+        in: query
+        description: Filter by import file UUID
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: importFileIds
+        in: query
+        description: Filter by multiple import file UUIDs
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Orders retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+    post:
+      tags:
+      - Orders
+      summary: Create new order
+      description: Creates a new order with automatic tax calculation based on coordinates
+        using native GeoJSON point-in-polygon lookup. No external API calls.
+      operationId: createOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRequest"
+        required: true
+      responses:
+        "201":
+          description: Order created successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: Invalid request or location outside NY State
+  /orders/import:
+    post:
+      tags:
+      - Orders
+      summary: Import orders from one or more CSV files
+      description: |-
+        High-performance CSV import using virtual threads and native GeoJSON point-in-polygon tax calculation.
+        No external API calls. Processes ~11k records/sec.
+
+        Accepts **one or more** CSV files. Each file is processed independently.
+
+        CSV columns: `id, longitude, latitude, timestamp, subtotal`
+
+        Response includes per-file results with:
+        - **importFileId** — UUID of the persisted import file record
+        - **outOfNyRecords** — count of rows outside New York State
+        - **outOfNyRows** — first 200 out-of-NY rows with coordinates (for review)
+        - **errors** — first 100 parse/save errors with line numbers
+      operationId: importCsv
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: array
+                  description: "One or more CSV files with columns: id, longitude,\
+                    \ latitude, timestamp, subtotal"
+                  items:
+                    type: string
+                    format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: Import completed
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          description: Invalid CSV file
+  /map/csv-preview:
+    post:
+      tags:
+      - Map
+      summary: Preview CSV points on map (no save)
+      description: Parses CSV → GeoJSON points for map preview. Does NOT persist.
+        Includes point count and subtotal sum.
+      operationId: previewCsvOnMap
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "CSV file: id, longitude, latitude, timestamp, subtotal"
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: object
+                additionalProperties: {}
+  /map/cache/clear:
+    post:
+      tags:
+      - Map
+      summary: Clear GeoJSON tax calc cache
+      operationId: clearCache
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /dashboard/cache/evict:
+    post:
+      tags:
+      - Dashboard
+      summary: Evict dashboard & map caches
+      description: Clears the cached dashboard and map data. Next request will recompute
+        from DB.
+      operationId: evictCaches
+      responses:
+        "200":
+          description: Caches evicted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+  /api/v1/orders/import:
+    post:
+      tags:
+      - Batch Import
+      summary: Start async CSV import
+      description: Queues a CSV file for asynchronous batch processing. Returns immediately
+        with job ID for tracking progress via SSE.
+      operationId: startImport
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "CSV file with columns: latitude, longitude, subtotal,\
+                    \ timestamp"
+              required:
+              - file
+      responses:
+        "200":
+          description: Import job queued successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+                example:
+                  message: Import job queued successfully
+                  jobId: 1
+                  filename: orders.csv
+                  status: QUEUED
+        "400":
+          description: Invalid file or upload failed
+  /tax-localities/{locality}:
+    get:
+      tags:
+      - Tax Localities
+      summary: Find tax locality by name
+      description: "Lookup a specific locality by name (case-insensitive, normalizes\
+        \ county suffixes and NYC borough aliases)."
+      operationId: getTaxLocality
+      parameters:
+      - name: locality
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Tax locality found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TaxLocality"
+        "404":
+          description: Locality not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TaxLocality"
+    delete:
+      tags:
+      - Tax Localities
+      summary: Delete a tax locality by name
+      operationId: deleteTaxLocality
+      parameters:
+      - name: locality
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+  /tax-localities/current:
+    get:
+      tags:
+      - Tax Localities
+      summary: Get current tax rates with effective date
+      description: |-
+        Returns all tax localities with the current effective date.
+        This endpoint provides the latest tax rate data as loaded in the system.
+        Use `POST /tax-localities/reload` to refresh from the bundled JSON file.
+      operationId: getCurrentTaxRates
+      responses:
+        "200":
+          description: Current tax rates returned
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders/import-files:
+    get:
+      tags:
+      - Orders
+      summary: List all import files (paginated)
+      description: |-
+        Returns a paginated list of all imported CSV files, sorted by import date descending.
+        Each entry includes file metadata, record counts (total, success, failed, out-of-NY), and processing stats.
+      operationId: listImportFiles
+      parameters:
+      - name: pageable
+        in: query
+        description: "Pagination (page, size, sort)"
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: Import files retrieved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModelImportFileResponse"
+  /orders/export:
+    get:
+      tags:
+      - Orders
+      summary: Export orders as CSV
+      description: |-
+        Downloads the orders table as a CSV file.
+        Supports **all the same filters** as `GET /orders`.
+
+        The CSV includes columns:
+        `id, latitude, longitude, subtotal, composite_tax_rate, tax_amount, total_amount,
+        ordered_at, is_within_new_york, county, region, state_rate, county_rate, city_rate,
+        special_rates, jurisdictions`
+
+        **Example**: `GET /orders/export?withinNewYork=true&county=Suffolk`
+      operationId: exportOrdersCsv
+      parameters:
+      - name: minLat
+        in: query
+        description: Min latitude
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        description: Max latitude
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        description: Min longitude
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        description: Max longitude
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        description: Min subtotal
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        description: Max subtotal
+        required: false
+        schema:
+          type: number
+      - name: minTotal
+        in: query
+        description: Min total
+        required: false
+        schema:
+          type: number
+      - name: maxTotal
+        in: query
+        description: Max total
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        description: Min tax rate
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        description: Max tax rate
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        description: From date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: To date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: withinNewYork
+        in: query
+        description: Within New York
+        required: false
+        schema:
+          type: boolean
+      - name: county
+        in: query
+        description: County name
+        required: false
+        schema:
+          type: string
+      - name: region
+        in: query
+        description: Region
+        required: false
+        schema:
+          type: string
+      - name: importFileId
+        in: query
+        description: Import file UUID
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: importFileIds
+        in: query
+        description: Filter by multiple import file UUIDs
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: CSV file streamed
+          content:
+            text/csv: {}
+        "500":
+          description: Error generating CSV
+  /map/orders:
+    get:
+      tags:
+      - Map
+      summary: Get orders as GeoJSON with filters + aggregate summary
+      description: |-
+        Returns orders as a GeoJSON FeatureCollection with rich filtering:
+        - **Bounding box**: minLat/maxLat/minLon/maxLon for viewport loading
+        - **Subtotal range**: minSubtotal/maxSubtotal
+        - **Tax rate range**: minTaxRate/maxTaxRate (composite rate, e.g. 0.08)
+        - **Date range**: from/to (ISO datetime)
+        - **Limit**: max features returned (default 10000)
+
+        Response includes `summary` with aggregate totals for the filtered set.
+      operationId: getOrdersGeoJson
+      parameters:
+      - name: minLat
+        in: query
+        description: Min latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        description: Max latitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        description: Min longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        description: Max longitude (bounding box)
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        description: Min subtotal filter
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        description: Max subtotal filter
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        description: Min composite tax rate (e.g. 0.04)
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        description: Max composite tax rate (e.g. 0.09)
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        description: "From date (ISO, e.g. 2024-01-01T00:00:00)"
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: "To date (ISO, e.g. 2024-12-31T23:59:59)"
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: limit
+        in: query
+        description: Max features to return (default 10000)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10000
+      responses:
+        "200":
+          description: GeoJSON FeatureCollection with summary
+          content:
+            application/geo+json:
+              schema:
+                type: object
+                additionalProperties: {}
+  /map/counties:
+    get:
+      tags:
+      - Map
+      summary: Get per-county aggregated map data (cached)
+      description: |-
+        Returns per-county aggregated data for map visualization (cached for 10 minutes).
+        Each entry includes:
+        - **county** — county name
+        - **order_count** — number of orders in this county
+        - **total_subtotal** — sum of subtotals (netto)
+        - **total_tax** — sum of tax amounts
+        - **total_revenue** — sum of totals (brutto)
+        - **average_tax_rate** — average composite tax rate
+        - **average_order_value** — average total per order
+
+        Sorted by order count descending. Use `POST /dashboard/cache/evict` to force refresh.
+      operationId: getCountyData
+      responses:
+        "200":
+          description: Per-county aggregated data
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MapCountyResponse"
+  /map/cache/stats:
+    get:
+      tags:
+      - Map
+      summary: Get GeoJSON tax calc cache stats
+      operationId: getCacheStats
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /map/boundaries/counties:
+    get:
+      tags:
+      - Map
+      summary: Get NY county boundaries GeoJSON
+      operationId: getCountyBoundaries
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: string
+                format: byte
+  /map/boundaries/boroughs:
+    get:
+      tags:
+      - Map
+      summary: Get NYC borough boundaries GeoJSON
+      operationId: getBoroughBoundaries
+      responses:
+        "200":
+          description: OK
+          content:
+            application/geo+json:
+              schema:
+                type: string
+                format: byte
+  /dashboard:
+    get:
+      tags:
+      - Dashboard
+      summary: Get dashboard statistics
+      description: |-
+        Returns aggregated dashboard stats (cached in-memory for 10 minutes):
+
+        **Overview metrics:**
+
+        - `total_orders` — total number of orders
+
+        - `valid_orders` / `invalid_orders` — within NY vs outside
+
+        - `total_subtotal` — sum of all subtotals (before tax, netto)
+
+        - `total_tax` — sum of all tax amounts
+
+        - `total_revenue` — sum of all totals (after tax, brutto)
+
+        - `average_order_value` — revenue / order count
+
+        - `average_tax_rate` — average composite tax rate for valid orders
+
+        - `min_subtotal` / `max_subtotal` — subtotal range
+
+        **Breakdowns:**
+
+        - `top_counties` — top 10 counties by order count with subtotal & revenue
+
+        - `region_breakdown` — per-region stats (NYC, Long Island, Hudson Valley, Capital District, Upstate) with order count, revenue, and avg tax rate
+
+        - `tax_rate_distribution` — order count grouped by tax rate buckets (< 4%, 4-7%, 7-8%, 8-9%, >= 9%)
+
+        Use `POST /dashboard/cache/evict` to force a refresh.
+      operationId: getDashboardStats
+      responses:
+        "200":
+          description: Dashboard stats retrieved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+  /api/v1/orders/import/{jobId}:
+    get:
+      tags:
+      - Batch Import
+      summary: Get job details
+      description: "Retrieves detailed information about a specific batch import job\
+        \ including status, metrics, and timing"
+      operationId: getJobDetails
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Job details retrieved
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BatchJobResponse"
+        "404":
+          description: Job not found
+  /api/v1/orders/import/{jobId}/report:
+    get:
+      tags:
+      - Batch Import
+      summary: Get complete job report
+      description: Retrieves comprehensive job report including job details and all
+        error records. Suitable for export as JSON.
+      operationId: getJobReport
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Report generated successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+                example: "{\"job\": {...}, \"errors\": [...]}"
+        "404":
+          description: Job not found
+  /api/v1/orders/import/{jobId}/errors:
+    get:
+      tags:
+      - Batch Import
+      summary: Get job errors
+      description: "Retrieves all error details for failed records in a specific job.\
+        \ Includes coordinates, error type, and messages."
+      operationId: getJobErrors
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Errors retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+        "404":
+          description: Job not found
+  /api/v1/orders/import/status/{jobId}:
+    get:
+      tags:
+      - Batch Import
+      summary: Stream job status via SSE
+      description: Establishes Server-Sent Events connection for real-time job progress
+        updates. Auto-closes when job completes or fails. Updates every 1 second.
+      operationId: streamJobStatus
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID returned from start import
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: SSE stream established
+          content:
+            text/event-stream: {}
+        "404":
+          description: Job not found
+  /api/v1/orders/import/history:
+    get:
+      tags:
+      - Batch Import
+      summary: Get job history
+      description: Retrieves paginated list of all batch import jobs ordered by creation
+        date (newest first)
+      operationId: getJobHistory
+      parameters:
+      - name: page
+        in: query
+        description: Page number (0-indexed)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        description: Page size (max 100)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: Job history retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModel"
+components:
+  schemas:
+    TaxLocality:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+          format: uuid
+        locality:
+          type: string
+        taxRatePercent:
+          type: number
+        reportingCode:
+          type: string
+        seeReference:
+          type: string
+        isSpecialDistrict:
+          type: boolean
+        isMctdDistrict:
+          type: boolean
+        parentCounty:
+          type: string
+        stateRate:
+          type: number
+        countyRate:
+          type: number
+        cityRate:
+          type: number
+        specialRates:
+          type: number
+        notes:
+          type: string
+    OrderRequest:
+      type: object
+      description: "Order details with latitude, longitude, and subtotal"
+      properties:
+        latitude:
+          type: number
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          maximum: 180.0
+          minimum: -180.0
+        subtotal:
+          type: number
+      required:
+      - latitude
+      - longitude
+      - subtotal
+    OrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        latitude:
+          type: number
+        longitude:
+          type: number
+        subtotal:
+          type: number
+        composite_tax_rate:
+          type: number
+        tax_amount:
+          type: number
+        total_amount:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        is_within_new_york:
+          type: boolean
+        county:
+          type: string
+        region:
+          type: string
+        taxBreakdown:
+          $ref: "#/components/schemas/TaxBreakdown"
+        jurisdictions:
+          type: array
+          items:
+            type: string
+    TaxBreakdown:
+      type: object
+      properties:
+        state_rate:
+          type: number
+        county_rate:
+          type: number
+        city_rate:
+          type: number
+        special_rates:
+          type: number
+    ImportError:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
+        recordData:
+          type: string
+    ImportResult:
+      type: object
+      properties:
+        importFileId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        totalRecords:
+          type: integer
+          format: int32
+        successfulRecords:
+          type: integer
+          format: int32
+        failedRecords:
+          type: integer
+          format: int32
+        outOfNyRecords:
+          type: integer
+          format: int32
+        durationMs:
+          type: integer
+          format: int64
+        recordsPerSecond:
+          type: number
+          format: double
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
+        outOfNyRows:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutOfNyRow"
+    OutOfNyRow:
+      type: object
+      properties:
+        lineNumber:
+          type: integer
+          format: int32
+        latitude:
+          type: number
+        longitude:
+          type: number
+        subtotal:
+          type: number
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    PageMetadata:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int64
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+    PagedModelTaxLocality:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxLocality"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    ImportFileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        original_filename:
+          type: string
+        file_size_bytes:
+          type: integer
+          format: int64
+        total_records:
+          type: integer
+          format: int32
+        successful_records:
+          type: integer
+          format: int32
+        failed_records:
+          type: integer
+          format: int32
+        out_of_ny_records:
+          type: integer
+          format: int32
+        duration_ms:
+          type: integer
+          format: int64
+        records_per_second:
+          type: number
+          format: double
+        imported_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+    PagedModelImportFileResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportFileResponse"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    MapCountyResponse:
+      type: object
+      properties:
+        county:
+          type: string
+        order_count:
+          type: integer
+          format: int64
+        total_subtotal:
+          type: number
+        total_tax:
+          type: number
+        total_revenue:
+          type: number
+        average_tax_rate:
+          type: number
+        average_order_value:
+          type: number
+    CountySummary:
+      type: object
+      properties:
+        county:
+          type: string
+        order_count:
+          type: integer
+          format: int64
+        total_subtotal:
+          type: number
+        total_revenue:
+          type: number
+    DashboardResponse:
+      type: object
+      properties:
+        total_orders:
+          type: integer
+          format: int64
+        valid_orders:
+          type: integer
+          format: int64
+        invalid_orders:
+          type: integer
+          format: int64
+        total_subtotal:
+          type: number
+        total_tax:
+          type: number
+        total_revenue:
+          type: number
+        average_order_value:
+          type: number
+        average_tax_rate:
+          type: number
+        min_subtotal:
+          type: number
+        max_subtotal:
+          type: number
+        top_counties:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountySummary"
+        tax_rate_distribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxRateBucket"
+        region_breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegionSummary"
+    RegionSummary:
+      type: object
+      properties:
+        region:
+          type: string
+        order_count:
+          type: integer
+          format: int64
+        total_subtotal:
+          type: number
+        total_revenue:
+          type: number
+        average_tax_rate:
+          type: number
+    TaxRateBucket:
+      type: object
+      properties:
+        rate_label:
+          type: string
+        order_count:
+          type: integer
+          format: int64
+    BatchJobResponse:
+      type: object
+      properties:
+        jobId:
+          type: integer
+          format: int64
+        jobName:
+          type: string
+        filename:
+          type: string
+        status:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        totalRecords:
+          type: integer
+          format: int32
+        processedRecords:
+          type: integer
+          format: int32
+        successfulRecords:
+          type: integer
+          format: int32
+        failedRecords:
+          type: integer
+          format: int32
+        skippedRecords:
+          type: integer
+          format: int32
+        errorMessage:
+          type: string
+        durationMs:
+          type: integer
+          format: int64
+    PagedModel:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          $ref: "#/components/schemas/PageMetadata"

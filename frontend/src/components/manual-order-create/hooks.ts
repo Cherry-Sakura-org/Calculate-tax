@@ -10,9 +10,17 @@ import {
 import { useCreateOrder } from '../../api/use-orders';
 
 const newOrderSchema = z.object({
-    latitude: z.number().min(LATITUDE_MIN).max(LATITUDE_MAX),
-    longitude: z.number().min(LONGITUDE_MIN).max(LONGITUDE_MAX),
-    subtotal: z.number().min(0.01),
+    latitude: z
+        .number({ error: 'Latitude is required' })
+        .min(LATITUDE_MIN)
+        .max(LATITUDE_MAX),
+    longitude: z
+        .number({ error: 'Longitude is required' })
+        .min(LONGITUDE_MIN)
+        .max(LONGITUDE_MAX),
+    subtotal: z
+        .number({ error: 'Subtotal is required' })
+        .min(0.01),
 });
 
 export type NewOrderFormValues = z.infer<typeof newOrderSchema>;

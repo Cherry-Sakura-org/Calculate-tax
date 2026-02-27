@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/db-changelog-001-user-order-table.sql
+  - include:
+      file: db/changelog/db-changelog-002-tax-localities-table.sql
+  - include:
+      file: db/changelog/db-changelog-003-add-mctd-district-column.sql
+  - include:
+      file: db/changelog/db-changelog-004-spring-batch-tables.sql
+  - include:
+      file: db/changelog/changes/007-create-batch-tracking-tables.yaml
+  - include:
+      file: db/changelog/changes/008-batch-v6-migration.sql
+  - include:
+      file: db/changelog/db-changelog-005-add-tax-breakdown-and-validity.sql
+  - include:
+      file: db/changelog/db-changelog-006-import-files-and-order-location.sql
+  - include:
+      file: db/changelog/db-changelog-009-add-performance-indexes.sql
+  - include:
+      file: db/changelog/db-changelog-010-add-oauth-columns.sql

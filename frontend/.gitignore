@@ -9,7 +9,7 @@ dist/
 
 # Profile
 .rspack-profile-*/
-
+.env
 # IDE
 .vscode/*
 !.vscode/extensions.json
