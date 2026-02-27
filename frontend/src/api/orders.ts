@@ -1,25 +1,21 @@
 import { apiClient } from './client';
 import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse, ImportResponse } from '../types/order';
 
-// API currently returns array, will return PaginatedResponse when backend pagination is ready
-type OrdersResponse = Order[] | PaginatedResponse<Order>;
-
-const isPaginated = (data: OrdersResponse): data is PaginatedResponse<Order> =>
-    data && typeof data === 'object' && 'content' in data && 'page' in data;
-
 export const ordersApi = {
     list: async (params: OrdersParams): Promise<{ items: Order[]; total: number }> => {
-        const response = await apiClient.get<OrdersResponse>('/orders', { params });
+        const response = await apiClient.get<PaginatedResponse<Order>>('/orders', { params });
         const data = response.data;
+        return { items: data.content, total: data.page.totalElements };
+    },
 
-        if (isPaginated(data)) {
-            return { items: data.content, total: data.page.totalElements };
-        }
-        // Fallback: API returns plain array
-        if (!Array.isArray(data)) {
-            return { items: [], total: 0 };
-        }
-        return { items: data, total: data.length };
+    downloadCsv: async () => {
+        const response = await apiClient.get('/orders/csv', { responseType: 'blob' });
+        const url = URL.createObjectURL(response.data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'orders.csv';
+        a.click();
+        URL.revokeObjectURL(url);
     },
 
     create: async (payload: CreateOrderPayload) => {

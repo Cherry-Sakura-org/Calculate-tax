@@ -16,7 +16,7 @@ export const toolbar: SxProps<Theme> = {
     px: { xs: 2, sm: 3 },
 };
 
-export const importButton: SxProps<Theme> = {
+export const actionButton: SxProps<Theme> = {
     whiteSpace: 'nowrap',
 };
 

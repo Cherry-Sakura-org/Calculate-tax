@@ -26,20 +26,7 @@ const OrdersTable = () => {
         hasNextPage,
     } = useOrdersTableController();
 
-    if (isLoading) {
-        return (
-            <Paper sx={styles.loadingPaper}>
-                <Stack alignItems='center' spacing={2}>
-                    <CircularProgress size={32} thickness={3} />
-                    <Typography variant='caption' color='text.secondary'>
-                        Loading orders...
-                    </Typography>
-                </Stack>
-            </Paper>
-        );
-    }
-
-    const virtualRows = rowVirtualizer.getVirtualItems();
+    const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
     const colGroup = (
         <colgroup>
@@ -78,7 +65,25 @@ const OrdersTable = () => {
                 <Table size='small' sx={styles.table}>
                     {colGroup}
                     <TableBody>
-                        {rows.length === 0 ? (
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={table.getAllColumns().length}
+                                    sx={styles.emptyStateCell}
+                                >
+                                    <Box sx={styles.emptyStateContainer}>
+                                        <CircularProgress size={24} thickness={3} />
+                                        <Typography
+                                            variant='caption'
+                                            color='text.secondary'
+                                            sx={styles.emptySubtext}
+                                        >
+                                            Loading orders...
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
+                        ) : rows.length === 0 ? (
                             <TableRow>
                                 <TableCell
                                     colSpan={table.getAllColumns().length}

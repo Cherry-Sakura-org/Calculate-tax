@@ -1,14 +1,6 @@
 import type { SxProps, Theme } from '@mui/material';
 import { alpha } from '@mui/material';
 
-export const loadingPaper: SxProps<Theme> = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    py: 8,
-    animation: 'fadeIn 0.3s ease-out',
-};
-
 export const paper: SxProps<Theme> = {
     display: 'flex',
     flexDirection: 'column',

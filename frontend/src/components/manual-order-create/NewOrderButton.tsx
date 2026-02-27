@@ -11,7 +11,7 @@ const NewOrderButton = () => {
     return (
         <>
             <Button
-                variant='contained'
+                variant='outlined'
                 startIcon={<AddIcon />}
                 onClick={openNewOrderDialog}
                 sx={styles.newOrderButton}

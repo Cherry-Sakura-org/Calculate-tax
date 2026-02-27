@@ -21,13 +21,36 @@ export interface Order {
 export interface OrdersParams {
     page?: number;
     size?: number;
-    sort?: string[];
-    date_from?: string;
-    date_to?: string;
-    latitude?: number;
-    longitude?: number;
-    min_tax_rate?: number;
-    max_tax_rate?: number;
+    sort?: string;
+
+    // Bounding box
+    minLat?: number;
+    maxLat?: number;
+    minLon?: number;
+    maxLon?: number;
+
+    // Amount ranges
+    minSubtotal?: number;
+    maxSubtotal?: number;
+    minTotal?: number;
+    maxTotal?: number;
+
+    // Tax rate range (e.g. 0.04 to 0.09)
+    minTaxRate?: number;
+    maxTaxRate?: number;
+
+    // Date range (ISO 8601)
+    from?: string;
+    to?: string;
+
+    // Location filters
+    withinNewYork?: boolean;
+    county?: string;
+    region?: string;
+
+    // Import file filters
+    importFileId?: string;
+    importFileIds?: string;
 }
 
 export interface PageMetadata {

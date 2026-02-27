@@ -54,3 +54,9 @@ export const useImportOrders = () => {
         onError: () => toast.error('Failed to import orders'),
     });
 };
+
+export const useDownloadOrdersCsv = () =>
+    useMutation({
+        mutationFn: ordersApi.downloadCsv,
+        onError: () => toast.error('Failed to download CSV'),
+    });
