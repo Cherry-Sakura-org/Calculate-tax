@@ -1,11 +1,8 @@
-export type UserRole = 'ADMIN' | 'SUPER_ADMIN';
-
 export interface AuthUser {
     id: string;
     username: string;
     email: string;
-    role: UserRole;
-    oauthProvider?: string | null;
+    createdAt: string;
 }
 
 export interface LoginPayload {

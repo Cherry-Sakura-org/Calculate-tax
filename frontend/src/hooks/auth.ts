@@ -9,7 +9,6 @@ export const useCurrentUser = () => {
         queryKey: AUTH_QUERY_KEY,
         queryFn: () => authApi.getCurrentUser(),
         staleTime: Infinity,
-        retry: false,
     });
 };
 
@@ -38,8 +37,8 @@ export const useRegister = () => {
 export const useLogout = () => {
     const queryClient = useQueryClient();
 
-    return async () => {
-        await authApi.logout();
+    return () => {
+        authApi.logout();
         queryClient.setQueryData(AUTH_QUERY_KEY, null);
     };
 };

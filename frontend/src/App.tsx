@@ -1,21 +1,21 @@
 import { AppBar, Toolbar, Stack, Button } from '@mui/material';
-import { Link } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastContainer } from 'react-toastify';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
-import ScienceIcon from '@mui/icons-material/Science';
 import NewOrderButton from './components/manual-order-create/NewOrderButton';
 import OrdersImportDialog from './components/orders-import/OrdersImport';
 import OrdersTable from './components/orders-table/OrdersTable';
 import AuthHeaderButton from './components/auth/AuthHeaderButton';
 import { useDialog } from './hooks/use-dialog';
-import { useOAuthCallback } from './hooks/use-oauth-callback';
 import * as styles from './app.styles';
 
+const queryClient = new QueryClient();
+
 function App() {
-    useOAuthCallback();
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
 
     return (
-        <>
+        <QueryClientProvider client={queryClient}>
             <Stack sx={styles.root}>
                 {/* Header */}
                 <AppBar position='static' elevation={0} sx={styles.appBar}>
@@ -30,15 +30,6 @@ function App() {
                                 sx={styles.importButton}
                             >
                                 Import CSV
-                            </Button>
-                            <Button
-                                component={Link}
-                                to='/test'
-                                variant='outlined'
-                                startIcon={<ScienceIcon />}
-                                sx={styles.importButton}
-                            >
-                                API Test
                             </Button>
                         </Stack>
 
@@ -56,7 +47,10 @@ function App() {
             {mountImportDialog && (
                 <OrdersImportDialog open={showImportDialog} onClose={closeImportDialog} />
             )}
-        </>
+
+            <ToastContainer />
+            {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+        </QueryClientProvider>
     );
 }
 

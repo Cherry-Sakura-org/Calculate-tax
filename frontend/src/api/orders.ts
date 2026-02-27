@@ -23,30 +23,11 @@ export const ordersApi = {
         return apiClient.post<Order>('/orders', payload).then((r) => r.data);
     },
 
-    exportCsv: async (params: Omit<OrdersParams, 'page' | 'size'> = {}) => {
-        const response = await apiClient.get('/orders/export', {
-            params,
-            responseType: 'blob',
-        });
-        const disposition = response.headers['content-disposition'];
-        const match = disposition?.match(/filename="?([^"]+)"?/);
-        const filename = match?.[1] || 'orders-export.csv';
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-    },
-
     import: (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient
-            .post<ImportResponse>('orders/import', formData, {
+            .post<ImportResponse>('/api/v1/native/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);

@@ -9,7 +9,6 @@ import { DateTime } from 'luxon';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useInfiniteOrders } from '../../api/use-orders';
-import { useCurrentUser } from '../../hooks/auth';
 import type { Order } from '../../types/order';
 import * as styles from './table-hooks.styles';
 
@@ -67,7 +66,7 @@ const columns = [
             return (
                 <Tooltip title='Copy ID' arrow placement='top'>
                     <Chip
-                        label={id.slice(0, 8)}
+                        label={id?.slice(0, 8) ?? '—'}
                         color='primary'
                         size='small'
                         onClick={(e) => {
@@ -84,12 +83,12 @@ const columns = [
     columnHelper.accessor('latitude', {
         header: 'Latitude',
         meta: { width: 120 },
-        cell: (info) => <MutedCell>{info.getValue().toFixed(6)}</MutedCell>,
+        cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
     }),
     columnHelper.accessor('longitude', {
         header: 'Longitude',
         meta: { width: 130 },
-        cell: (info) => <MutedCell>{info.getValue().toFixed(6)}</MutedCell>,
+        cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
     }),
     columnHelper.accessor('jurisdictions', {
         header: 'Jurisdictions',
@@ -141,26 +140,24 @@ const columns = [
     columnHelper.accessor('subtotal', {
         header: 'Subtotal',
         meta: { highlighted: true, width: 100 },
-        cell: (info) => <ValueCell>${info.getValue().toFixed(2)}</ValueCell>,
+        cell: (info) => <ValueCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</ValueCell>,
     }),
     columnHelper.accessor('tax_amount', {
         header: 'Tax',
         meta: { highlighted: true, width: 80 },
-        cell: (info) => <ValueCell>${info.getValue().toFixed(2)}</ValueCell>,
+        cell: (info) => <ValueCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</ValueCell>,
     }),
     columnHelper.accessor('total_amount', {
         header: 'Total',
         meta: { highlighted: true, width: 90 },
-        cell: (info) => <HighlightCell>${info.getValue().toFixed(2)}</HighlightCell>,
+        cell: (info) => <HighlightCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</HighlightCell>,
     }),
 ];
 
 const ROW_HEIGHT_ESTIMATE = 49;
 
 export const useOrdersTableController = () => {
-    const { data: currentUser, isLoading: isAuthLoading } = useCurrentUser();
-    const isAuthenticated = !!currentUser;
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders({}, isAuthenticated);
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders();
 
     const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
     const totalRows = data?.pages[0]?.total ?? 0;
@@ -197,8 +194,7 @@ export const useOrdersTableController = () => {
     return {
         table,
         rows,
-        isLoading: isLoading || isAuthLoading,
-        isAuthenticated,
+        isLoading,
         totalRows,
         tableContainerRef,
         rowVirtualizer,
