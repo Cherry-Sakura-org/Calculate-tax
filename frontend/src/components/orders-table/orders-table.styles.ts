@@ -19,14 +19,27 @@ export const paper: SxProps<Theme> = {
     },
 };
 
-export const tableContainer: SxProps<Theme> = {
+export const headerContainer: SxProps<Theme> = {
+    overflow: 'hidden',
+    flexShrink: 0,
+    bgcolor: 'transparent',
+};
+
+export const bodyContainer: SxProps<Theme> = {
     flex: 1,
     overflow: 'auto',
     overscrollBehavior: 'none',
+    bgcolor: 'transparent',
+    display: 'flex',
+    flexDirection: 'column',
+    '& > table': {
+        flex: 1,
+    },
 };
 
 export const table: SxProps<Theme> = {
     tableLayout: 'fixed',
+    bgcolor: 'transparent',
 };
 
 export const headerCell: SxProps<Theme> = {
@@ -34,8 +47,16 @@ export const headerCell: SxProps<Theme> = {
     bgcolor: '#e8efe9 !important',
 };
 
-export const emptyState: SxProps<Theme> = {
-    py: 6,
+export const emptyStateCell: SxProps<Theme> = {
+    border: 'none',
+};
+
+export const emptyStateContainer: SxProps<Theme> = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
 };
 
 export const emptySubtext: SxProps<Theme> = {

@@ -1,9 +1,5 @@
 import { Box, Chip, Stack, Tooltip, Typography } from '@mui/material';
-import {
-    createColumnHelper,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
+import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateTime } from 'luxon';
 import { useEffect, useMemo, useRef } from 'react';
@@ -45,7 +41,13 @@ const TaxRateBreakdown = ({ order }: { order: Order }) => (
             { label: 'City', value: order.taxBreakdown.city_rate },
             { label: 'Special', value: order.taxBreakdown.special_rates },
         ].map((item) => (
-            <Stack key={item.label} direction='row' justifyContent='space-between' spacing={2} sx={styles.breakdownRow}>
+            <Stack
+                key={item.label}
+                direction='row'
+                justifyContent='space-between'
+                spacing={2}
+                sx={styles.breakdownRow}
+            >
                 <Typography variant='caption' color='text.secondary'>
                     {item.label}
                 </Typography>
@@ -98,12 +100,7 @@ const columns = [
             return (
                 <Stack direction='row' spacing={0.5} flexWrap='wrap' useFlexGap>
                     {values.map((j) => (
-                        <Chip
-                            key={j}
-                            label={j}
-                            size='small'
-                            sx={styles.jurisdictionChip}
-                        />
+                        <Chip key={j} label={j} size='small' sx={styles.jurisdictionChip} />
                     ))}
                 </Stack>
             );
@@ -140,17 +137,29 @@ const columns = [
     columnHelper.accessor('subtotal', {
         header: 'Subtotal',
         meta: { highlighted: true, width: 100 },
-        cell: (info) => <ValueCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</ValueCell>,
+        cell: (info) => (
+            <ValueCell>
+                {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
+            </ValueCell>
+        ),
     }),
     columnHelper.accessor('tax_amount', {
         header: 'Tax',
         meta: { highlighted: true, width: 80 },
-        cell: (info) => <ValueCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</ValueCell>,
+        cell: (info) => (
+            <ValueCell>
+                {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
+            </ValueCell>
+        ),
     }),
     columnHelper.accessor('total_amount', {
         header: 'Total',
         meta: { highlighted: true, width: 90 },
-        cell: (info) => <HighlightCell>{info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}</HighlightCell>,
+        cell: (info) => (
+            <HighlightCell>
+                {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
+            </HighlightCell>
+        ),
     }),
 ];
 

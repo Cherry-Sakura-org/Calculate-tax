@@ -41,16 +41,21 @@ const OrdersTable = () => {
 
     const virtualRows = rowVirtualizer.getVirtualItems();
 
+    const colGroup = (
+        <colgroup>
+            {table.getAllColumns().map((col) => {
+                const w = (col.columnDef.meta as { width?: number })?.width;
+                return <col key={col.id} style={w ? { width: w } : undefined} />;
+            })}
+        </colgroup>
+    );
+
     return (
         <Paper sx={styles.paper}>
-            <TableContainer ref={tableContainerRef} sx={styles.tableContainer}>
-                <Table size='small' stickyHeader sx={styles.table}>
-                    <colgroup>
-                        {table.getAllColumns().map((col) => {
-                            const w = (col.columnDef.meta as { width?: number })?.width;
-                            return <col key={col.id} style={w ? { width: w } : undefined} />;
-                        })}
-                    </colgroup>
+            {/* Fixed header */}
+            <TableContainer sx={styles.headerContainer}>
+                <Table size='small' sx={styles.table}>
+                    {colGroup}
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -65,11 +70,21 @@ const OrdersTable = () => {
                             </TableRow>
                         ))}
                     </TableHead>
+                </Table>
+            </TableContainer>
+
+            {/* Scrollable body */}
+            <TableContainer ref={tableContainerRef} sx={styles.bodyContainer}>
+                <Table size='small' sx={styles.table}>
+                    {colGroup}
                     <TableBody>
                         {rows.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={table.getAllColumns().length} align='center'>
-                                    <Box sx={styles.emptyState}>
+                                <TableCell
+                                    colSpan={table.getAllColumns().length}
+                                    sx={styles.emptyStateCell}
+                                >
+                                    <Box sx={styles.emptyStateContainer}>
                                         <Typography variant='body2' color='text.secondary'>
                                             No orders found
                                         </Typography>
@@ -162,21 +177,23 @@ const OrdersTable = () => {
                 </Table>
 
                 {/* Infinite scroll status */}
-                <Box sx={styles.scrollStatus}>
-                    {isFetchingNextPage && (
-                        <Stack direction='row' alignItems='center' spacing={1}>
-                            <CircularProgress size={18} thickness={3} />
-                            <Typography variant='caption' color='text.secondary'>
-                                Loading more...
+                {(isFetchingNextPage || (!hasNextPage && rows.length > 0)) && (
+                    <Box sx={styles.scrollStatus}>
+                        {isFetchingNextPage && (
+                            <Stack direction='row' alignItems='center' spacing={1}>
+                                <CircularProgress size={18} thickness={3} />
+                                <Typography variant='caption' color='text.secondary'>
+                                    Loading more...
+                                </Typography>
+                            </Stack>
+                        )}
+                        {!hasNextPage && rows.length > 0 && (
+                            <Typography variant='caption' color='text.disabled'>
+                                All orders loaded
                             </Typography>
-                        </Stack>
-                    )}
-                    {!hasNextPage && rows.length > 0 && (
-                        <Typography variant='caption' color='text.disabled'>
-                            All orders loaded
-                        </Typography>
-                    )}
-                </Box>
+                        )}
+                    </Box>
+                )}
             </TableContainer>
         </Paper>
     );

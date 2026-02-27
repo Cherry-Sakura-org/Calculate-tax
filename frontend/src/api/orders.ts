@@ -16,6 +16,9 @@ export const ordersApi = {
             return { items: data.content, total: data.page.totalElements };
         }
         // Fallback: API returns plain array
+        if (!Array.isArray(data)) {
+            return { items: [], total: 0 };
+        }
         return { items: data, total: data.length };
     },
 
