@@ -1,14 +1,28 @@
 import axios, { AxiosError } from 'axios';
 import { toast } from 'react-toastify';
 
-export const API_BASE = 'https://api.ya3.uk';
+export const API_BASE =
+    typeof __API_BASE__ === 'string'
+        ? __API_BASE__
+        : 'https://api.ya3.uk';
+
+const TOKEN_KEY = 'access_token';
+
+export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);
+export const setToken = (token: string): void => localStorage.setItem(TOKEN_KEY, token);
+export const clearToken = (): void => localStorage.removeItem(TOKEN_KEY);
 
 export const apiClient = axios.create({
     baseURL: API_BASE,
     headers: { 'Content-Type': 'application/json' },
-    withCredentials: true,
-    xsrfCookieName: 'XSRF-TOKEN',
-    xsrfHeaderName: 'X-XSRF-TOKEN',
+});
+
+apiClient.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 apiClient.interceptors.response.use(

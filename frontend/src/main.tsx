@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import theme from './theme';
 import App from './App.tsx';
 import TestPage from './pages/test/TestPage';
+import OAuthCallbackPage from './pages/oauth/OAuthCallbackPage';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
                         <Routes>
                             <Route path='/' element={<App />} />
                             <Route path='/test' element={<TestPage />} />
+                            <Route path='/oauth/callback' element={<OAuthCallbackPage />} />
                         </Routes>
                     </BrowserRouter>
                 </ErrorBoundary>

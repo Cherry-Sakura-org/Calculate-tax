@@ -8,7 +8,6 @@ import com.acheron.backend.entity.User;
 import com.acheron.backend.repository.UserRepository;
 import com.acheron.backend.security.JwtUtil;
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -38,15 +37,6 @@ public class UserService implements UserDetailsService, OAuth2UserService<OAuth2
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-
-    @Value("${jwt.cookie.secure:false}")
-    private boolean cookieSecure;
-
-    @Value("${jwt.cookie.same-site:Lax}")
-    private String cookieSameSite;
-
-    @Value("${jwt.cookie.max-age:10800}")
-    private int cookieMaxAge;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
@@ -112,18 +102,8 @@ public class UserService implements UserDetailsService, OAuth2UserService<OAuth2
         return UserResponse.fromEntity(user);
     }
 
-    public void issueJwtCookie(User user, HttpServletResponse response) {
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
-
-        String setCookie = String.format("access_token=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=%s%s",
-                token, cookieMaxAge, cookieSameSite, cookieSecure ? "; Secure" : "");
-        response.addHeader("Set-Cookie", setCookie);
-    }
-
-    public void clearJwtCookie(HttpServletResponse response) {
-        String setCookie = String.format("access_token=; Path=/; Max-Age=0; HttpOnly; SameSite=%s%s",
-                cookieSameSite, cookieSecure ? "; Secure" : "");
-        response.addHeader("Set-Cookie", setCookie);
+    public String generateToken(User user) {
+        return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
     }
 
     // ── OAuth2 ──────────────────────────────────────────────
