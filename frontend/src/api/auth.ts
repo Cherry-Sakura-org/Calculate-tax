@@ -1,4 +1,4 @@
-﻿import { apiClient } from './client';
+﻿import { apiClient, setToken, clearToken, getToken } from './client';
 import { AuthUser, LoginPayload, RegisterPayload, AuthResponse, AuthError } from '../types/auth';
 
 const createAuthError = (code: AuthError['code'], message: string, details?: Record<string, any>): AuthError => ({
@@ -30,8 +30,9 @@ const toAuthError = (error: unknown): AuthError => {
 export const authApi = {
     login: async (payload: LoginPayload): Promise<AuthResponse> => {
         try {
-            const { data } = await apiClient.post<AuthUser>('/auth/login', payload);
-            return { token: '', user: data };
+            const { data } = await apiClient.post<AuthResponse>('/auth/login', payload);
+            setToken(data.token);
+            return data;
         } catch (error) {
             throw toAuthError(error);
         }
@@ -39,26 +40,25 @@ export const authApi = {
 
     register: async (payload: RegisterPayload): Promise<AuthResponse> => {
         try {
-            const { data } = await apiClient.post<AuthUser>('/auth/register', payload);
-            return { token: '', user: data };
+            const { data } = await apiClient.post<AuthResponse>('/auth/register', payload);
+            setToken(data.token);
+            return data;
         } catch (error) {
             throw toAuthError(error);
         }
     },
 
     logout: async (): Promise<void> => {
-        try {
-            await apiClient.post('/auth/logout');
-        } catch {
-            // ignore
-        }
+        clearToken();
     },
 
     getCurrentUser: async (): Promise<AuthUser | null> => {
+        if (!getToken()) return null;
         try {
             const { data } = await apiClient.get<AuthUser>('/auth/me');
             return data;
         } catch {
+            clearToken();
             return null;
         }
     },

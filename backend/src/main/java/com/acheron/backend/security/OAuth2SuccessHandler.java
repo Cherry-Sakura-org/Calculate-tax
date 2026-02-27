@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -42,8 +43,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             throw new IllegalStateException("Unexpected principal type: " + principal.getClass().getName());
         }
 
-        userService.issueJwtCookie(user, response);
+        String token = userService.generateToken(user);
         log.info("OAuth2 login success: {} ({})", user.getUsername(), user.getOauthProvider());
-        response.sendRedirect(frontendUrl + "/?oauth=success");
+
+        String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
+                .path("/oauth/callback")
+                .queryParam("token", token)
+                .build()
+                .toUriString();
+
+        response.sendRedirect(redirectUrl);
     }
 }
