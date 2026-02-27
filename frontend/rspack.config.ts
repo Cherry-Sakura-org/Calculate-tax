@@ -29,8 +29,7 @@ const readEnvFile = (filePath: string): Record<string, string> => {
 };
 
 const envFromFile = readEnvFile(path.resolve(process.cwd(), '.env'));
-const backendUrl = process.env.VITE_API_URL || envFromFile.VITE_API_URL || 'https://api.ya3.uk';
-const apiBaseUrl = isDev ? '' : backendUrl;
+const apiBaseUrl = process.env.VITE_API_URL || envFromFile.VITE_API_URL || 'https://api.ya3.uk';
 
 // Target browsers, see: https://github.com/browserslist/browserslist
 const targets = ['last 2 versions', '> 0.2%', 'not dead', 'Firefox ESR'];
@@ -39,13 +38,6 @@ export default defineConfig({
     devServer: {
         port: 5173,
         historyApiFallback: true,
-        proxy: [
-            {
-                context: ['/auth', '/orders', '/users', '/oauth2', '/login/oauth2', '/csrf', '/swagger-ui', '/v3'],
-                target: backendUrl,
-                changeOrigin: true,
-            },
-        ],
     },
     entry: {
         main: './src/main.tsx',

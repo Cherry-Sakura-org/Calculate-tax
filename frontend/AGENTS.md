@@ -7,7 +7,7 @@ You are an expert in JavaScript, Rspack, and web application development. You wr
 - `npm run dev` - Start the dev server
 - `npm run build` - Build the app for production
 - `npm run preview` - Preview the production build locally
-
+ 
 ## Docs
 
 - Rspack: <https://rspack.rs/llms.txt>

@@ -4,7 +4,6 @@ import com.acheron.backend.entity.User;
 import com.acheron.backend.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +14,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtCookieFilter extends OncePerRequestFilter {
 
-    public static final String ACCESS_TOKEN_COOKIE = "access_token";
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
@@ -31,40 +29,31 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String jwt = extractTokenFromCookie(request);
+        String jwt = extractTokenFromHeader(request);
 
-        if (jwt == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (jwtUtil.validateToken(jwt)) {
+        if (jwt != null && jwtUtil.validateToken(jwt)) {
             String username = jwtUtil.getUsername(jwt);
-            log.debug("JWT valid, username from token: '{}', request: {}", username, request.getRequestURI());
+            log.debug("JWT valid, username: '{}', uri: {}", username, request.getRequestURI());
             User user = userRepository.findByUsername(username).orElse(null);
 
-            if (user != null) {
+            if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         user, null, user.getAuthorities()
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("Auth set for user: {} (role={})", user.getUsername(), user.getRole());
             } else if (user == null) {
                 log.warn("JWT username '{}' not found in DB", username);
             }
-        } else {
-            log.debug("JWT validation failed for request: {}", request.getRequestURI());
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
-        return Arrays.stream(request.getCookies())
-                .filter(c -> ACCESS_TOKEN_COOKIE.equals(c.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(null);
+    private String extractTokenFromHeader(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith(BEARER_PREFIX)) {
+            return header.substring(BEARER_PREFIX.length());
+        }
+        return null;
     }
 }
