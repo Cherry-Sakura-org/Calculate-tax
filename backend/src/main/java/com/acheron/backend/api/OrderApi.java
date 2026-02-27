@@ -40,7 +40,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderApi {
     private final OrderService orderService;
-    private final com.acheron.backend.repository.OrderRepository orderRepository;
 
     @Operation(
             summary = "Get all orders (filtered + paginated)",
@@ -106,7 +105,8 @@ public class OrderApi {
             @Parameter(description = "Filter by county name (case-insensitive)") @RequestParam(required = false) String county,
             @Parameter(description = "Filter by region: NYC, Long Island, Hudson Valley, Capital District, Upstate, Out of State") @RequestParam(required = false) String region,
             @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId,
-            @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds
+            @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
+            @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
     ) {
         Specification<Order> spec = Specification.where(OrderSpecification.hasMinLatitude(minLat))
                 .and(OrderSpecification.hasMaxLatitude(maxLat))
@@ -126,7 +126,7 @@ public class OrderApi {
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
 
-        return ResponseEntity.ok(orderService.getAllOrders(spec, pageable));
+        return ResponseEntity.ok(orderService.getAllOrdersForCurrentUser(spec, pageable, userId));
     }
 
     @Operation(
@@ -166,6 +166,7 @@ public class OrderApi {
             @Parameter(description = "Region") @RequestParam(required = false) String region,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
+            @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId,
             HttpServletResponse response
     ) throws IOException {
         Specification<Order> spec = Specification.where(OrderSpecification.hasMinLatitude(minLat))
@@ -186,7 +187,7 @@ public class OrderApi {
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
 
-        List<Order> orders = orderRepository.findAll(spec);
+        List<Order> orders = orderService.getAllOrdersListForCurrentUser(spec, userId);
 
         String filename = "orders-export-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss")) + ".csv";
         response.setContentType("text/csv");
@@ -243,5 +244,23 @@ public class OrderApi {
             @Valid @RequestBody OrderRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
+    }
+
+    @Operation(
+            summary = "⚠️ TEST: Delete ALL orders",
+            description = "Hard-deletes ALL orders, tax breakdowns, and import files. This is a destructive test-only endpoint."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All orders deleted"),
+            @ApiResponse(responseCode = "500", description = "Error during deletion")
+    })
+    @DeleteMapping("/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('SUPER_ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> deleteAllOrders() {
+        long deleted = orderService.deleteAllOrders();
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "All orders deleted",
+                "deletedCount", deleted
+        ));
     }
 }

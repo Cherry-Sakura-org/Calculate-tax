@@ -29,7 +29,7 @@ const readEnvFile = (filePath: string): Record<string, string> => {
 };
 
 const envFromFile = readEnvFile(path.resolve(process.cwd(), '.env'));
-const backendUrl = process.env.VITE_API_URL || envFromFile.VITE_API_URL || 'http://localhost:8080';
+const backendUrl = process.env.VITE_API_URL || envFromFile.VITE_API_URL || 'https://api.ya3.uk';
 const apiBaseUrl = isDev ? '' : backendUrl;
 
 // Target browsers, see: https://github.com/browserslist/browserslist

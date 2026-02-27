@@ -76,5 +76,26 @@ spring:
     job:
       enabled: false
 
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:}
+            client-secret: ${GITHUB_CLIENT_SECRET:}
+            scope: user:email,read:user
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: openid,profile,email
+
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-change-in-production-please-32chars}
+  ttl: ${JWT_TTL:10800000}
+  cookie:
+    secure: ${JWT_COOKIE_SECURE:false}
+    same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+    max-age: ${JWT_COOKIE_MAX_AGE:10800}
+
 frontend:
   url: ${FRONTEND_URL:http://localhost:5173}

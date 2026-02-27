@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { toast } from 'react-toastify';
 
-export const API_BASE = 'http://localhost:8080';
+export const API_BASE = 'https://api.ya3.uk';
 
 export const apiClient = axios.create({
     baseURL: API_BASE,

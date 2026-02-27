@@ -44,6 +44,7 @@ public class NativeImportService {
     private final ImportFileRepository importFileRepository;
     private final PlatformTransactionManager transactionManager;
     private final EntityManager entityManager;
+    private final UserService userService;
 
     private static final int PROCESS_BATCH_SIZE = 1000;
     private static final int SAVE_BATCH_SIZE = 500;
@@ -99,7 +100,7 @@ public class NativeImportService {
             return new ImportResult(null, file.getOriginalFilename(), 0, 0, 0, 0, 0, 0, List.of(), List.of());
         }
 
-        UUID userId = userRepository.findByUsername("acheron")
+        UUID userId = userRepository.findByUsername(userService.getCurrentUser().getUsername())
                 .orElseThrow(() -> new IllegalStateException("User 'acheron' not found"))
                 .getId();
 
