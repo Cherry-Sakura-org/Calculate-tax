@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     Box,
+    Button,
     CircularProgress,
     Table,
     TableBody,
@@ -12,12 +14,40 @@ import {
     Typography,
     Stack,
 } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import { toast } from 'react-toastify';
+import { ordersApi } from '../../api/orders';
 import { useOrdersTableController } from './hooks';
 import * as styles from './orders-table.styles';
 
 const OrdersTable = () => {
-    const { table, rows, isLoading, tableContainerRef, rowVirtualizer, isFetchingNextPage, hasNextPage } =
+    const { table, rows, isLoading, isAuthenticated, tableContainerRef, rowVirtualizer, isFetchingNextPage, hasNextPage, totalRows } =
         useOrdersTableController();
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportCsv = async () => {
+        setIsExporting(true);
+        try {
+            await ordersApi.exportCsv();
+            toast.success('CSV downloaded');
+        } catch {
+            toast.error('Failed to export CSV');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    if (!isAuthenticated && !isLoading) {
+        return (
+            <Paper sx={styles.loadingPaper}>
+                <Stack alignItems='center' spacing={2}>
+                    <Typography variant='body2' color='text.secondary'>
+                        Please sign in to view orders
+                    </Typography>
+                </Stack>
+            </Paper>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -144,20 +174,34 @@ const OrdersTable = () => {
                     </TableBody>
                 </Table>
 
-                {/* Infinite scroll status */}
-                <Box sx={styles.scrollStatus}>
-                    {isFetchingNextPage && (
-                        <Stack direction='row' alignItems='center' spacing={1}>
-                            <CircularProgress size={18} thickness={3} />
-                            <Typography variant='caption' color='text.secondary'>
-                                Loading more...
+                {/* Infinite scroll status + export */}
+                <Box sx={{ ...styles.scrollStatus, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        {isFetchingNextPage && (
+                            <Stack direction='row' alignItems='center' spacing={1}>
+                                <CircularProgress size={18} thickness={3} />
+                                <Typography variant='caption' color='text.secondary'>
+                                    Loading more...
+                                </Typography>
+                            </Stack>
+                        )}
+                        {!hasNextPage && rows.length > 0 && (
+                            <Typography variant='caption' color='text.disabled'>
+                                All {totalRows} orders loaded
                             </Typography>
-                        </Stack>
-                    )}
-                    {!hasNextPage && rows.length > 0 && (
-                        <Typography variant='caption' color='text.disabled'>
-                            All orders loaded
-                        </Typography>
+                        )}
+                    </Box>
+                    {rows.length > 0 && (
+                        <Button
+                            size='small'
+                            variant='outlined'
+                            startIcon={isExporting ? <CircularProgress size={14} thickness={3} /> : <DownloadIcon />}
+                            onClick={handleExportCsv}
+                            disabled={isExporting}
+                            sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                        >
+                            Export CSV
+                        </Button>
                     )}
                 </Box>
             </TableContainer>

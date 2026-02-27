@@ -105,7 +105,7 @@ const Section = ({ title, endpoint, method = 'GET', icon, children, onRefresh, i
                     label={`${method} ${endpoint}`}
                     size='small'
                     variant='outlined'
-                    color={method === 'POST' ? 'warning' : 'info'}
+                    color={method === 'DELETE' ? 'error' : method === 'POST' ? 'warning' : 'info'}
                     sx={styles.endpointChip}
                 />
                 {onRefresh && (
@@ -560,6 +560,53 @@ const CacheSection = () => {
 };
 
 /* ─────────────────────────────────────────────
+   6. Delete All Orders (test)
+   ───────────────────────────────────────────── */
+
+const DeleteAllOrdersSection = () => {
+    const queryClient = useQueryClient();
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+    const deleteMutation = useMutation<{ message: string; deletedCount: number }>({
+        mutationFn: () => apiClient.delete('/orders/all').then((r) => r.data),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries();
+            setConfirmOpen(false);
+            window.alert(`Deleted ${data.deletedCount} orders`);
+        },
+    });
+
+    return (
+        <Section title='⚠️ Delete All Orders' endpoint='/orders/all' method='DELETE' icon={<DeleteSweepIcon color='error' />}>
+            <Typography variant='body2' color='text.secondary' mb={2}>
+                Hard-deletes <strong>all</strong> orders, tax breakdowns, and import files. This cannot be undone.
+            </Typography>
+            {!confirmOpen ? (
+                <Button variant='outlined' color='error' startIcon={<DeleteSweepIcon />} onClick={() => setConfirmOpen(true)}>
+                    Delete All Orders…
+                </Button>
+            ) : (
+                <Stack direction='row' spacing={2} alignItems='center'>
+                    <Button
+                        variant='contained'
+                        color='error'
+                        startIcon={<DeleteSweepIcon />}
+                        onClick={() => deleteMutation.mutate()}
+                        disabled={deleteMutation.isPending}
+                    >
+                        {deleteMutation.isPending ? 'Deleting…' : 'Confirm Delete ALL'}
+                    </Button>
+                    <Button variant='outlined' onClick={() => setConfirmOpen(false)} disabled={deleteMutation.isPending}>
+                        Cancel
+                    </Button>
+                    {deleteMutation.isError && <Alert severity='error' sx={{ py: 0 }}>Failed to delete</Alert>}
+                </Stack>
+            )}
+        </Section>
+    );
+};
+
+/* ─────────────────────────────────────────────
    Page root
    ───────────────────────────────────────────── */
 
@@ -581,6 +628,7 @@ const TestPage = () => (
             <MapCountiesSection />
             <ImportFilesSection />
             <CacheSection />
+            <DeleteAllOrdersSection />
         </Box>
     </Box>
 );

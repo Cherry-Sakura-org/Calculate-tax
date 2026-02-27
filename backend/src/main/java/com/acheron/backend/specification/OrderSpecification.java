@@ -83,4 +83,8 @@ public final class OrderSpecification {
             return root.get("importFile").get("id").in(importFileIds);
         };
     }
+
+    public static Specification<Order> createdByUserId(UUID userId) {
+        return (root, query, cb) -> userId == null ? null : cb.equal(root.get("createdByAdmin").get("id"), userId);
+    }
 }

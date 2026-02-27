@@ -44,7 +44,9 @@ repositories {
 
 dependencies {
     var springdoc = "3.0.1"
+    var jwtUtil = "4.5.0"
 
+    implementation "com.auth0:java-jwt:${jwtUtil}"
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdoc}"
     implementation 'org.locationtech.jts:jts-core:1.20.0'
     implementation 'org.locationtech.jts.io:jts-io-common:1.20.0'
@@ -58,6 +60,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     testImplementation 'org.springframework.security:spring-security-test'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
