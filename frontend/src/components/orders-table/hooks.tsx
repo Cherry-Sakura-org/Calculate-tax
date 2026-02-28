@@ -233,7 +233,7 @@ export interface SelectionState {
     someSelected: boolean;
 }
 
-export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default', includeManual = true) => {
+export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default') => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const [filters, setFilters] = useState<Record<string, RangeFilterValue>>({
@@ -258,9 +258,8 @@ export const useOrdersTableController = (importFileIds?: string, density: TableD
     const apiParams = useMemo(() => {
         const params = buildApiParams(filters, sortColumn, sortDirection, jurisdictionFilter);
         if (importFileIds) params.importFileIds = importFileIds;
-        if (includeManual) params.manualOnly = true;
         return params;
-    }, [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds, includeManual]);
+    }, [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds]);
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
         useInfiniteOrders(apiParams);

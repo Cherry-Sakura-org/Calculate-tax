@@ -6,7 +6,6 @@ export const useCsvFileSelector = () => {
     const { data: files = [], isLoading } = useImportFiles();
     const deleteImportFile = useDeleteImportFile();
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [includeManual, setIncludeManual] = useState(true);
     const [initialized, setInitialized] = useState(false);
 
     // Select all files by default once data loads
@@ -53,17 +52,12 @@ export const useCsvFileSelector = () => {
         });
     }, [deleteImportFile]);
 
-    const toggleIncludeManual = useCallback(() => {
-        setIncludeManual((prev) => !prev);
-    }, []);
-
     const selectedFiles = files.filter((f: CsvFileEntry) => selectedIds.has(f.id));
 
     return {
         files,
         selectedIds,
         selectedFiles,
-        includeManual,
         isLoading,
         isDeleting: deleteImportFile.isPending,
         toggleFile,
@@ -71,6 +65,5 @@ export const useCsvFileSelector = () => {
         deselectAll,
         selectOnly,
         deleteFile,
-        toggleIncludeManual,
     };
 };

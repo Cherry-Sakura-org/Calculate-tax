@@ -27,27 +27,23 @@ import * as styles from './csv-file-selector.styles';
 interface CsvFileSelectorProps {
     files: CsvFileEntry[];
     selectedIds: Set<string>;
-    includeManual: boolean;
     isDeleting?: boolean;
     onToggle: (id: string) => void;
     onSelectAll: () => void;
     onDeselectAll: () => void;
     onSelectOnly: (id: string) => void;
     onDelete: (id: string) => void;
-    onToggleIncludeManual: () => void;
 }
 
 const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
     files,
     selectedIds,
-    includeManual,
     isDeleting,
     onToggle,
     onSelectAll,
     onDeselectAll,
     onSelectOnly,
     onDelete,
-    onToggleIncludeManual,
 }) => {
     const [open, setOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<CsvFileEntry | null>(null);
@@ -96,13 +92,6 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
             >
                 <ClickAwayListener onClickAway={() => setOpen(false)}>
                     <Paper sx={{ minWidth: 240, maxHeight: 320, overflow: 'auto' }}>
-                        <MenuList dense disablePadding>
-                            <MenuItem onClick={onToggleIncludeManual} sx={styles.selectAllItem}>
-                                <Checkbox size='small' checked={includeManual} />
-                                <ListItemText primary='Include manual transactions' />
-                            </MenuItem>
-                            <Divider />
-                        </MenuList>
                         {files.length === 0 ? (
                             <Typography variant='body2' sx={styles.emptyText}>
                                 Import CSV files to get started

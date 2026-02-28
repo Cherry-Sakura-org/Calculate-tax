@@ -48,9 +48,6 @@ export interface OrdersParams {
     counties?: string;
     regions?: string;
 
-    // Manual orders filter
-    manualOnly?: boolean;
-
     // Import file filters
     importFileId?: string;
     importFileIds?: string;

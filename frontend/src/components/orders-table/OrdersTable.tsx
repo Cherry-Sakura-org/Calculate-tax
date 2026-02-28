@@ -58,7 +58,7 @@ const OrdersTable = () => {
         hasNextPage,
         apiParams,
         selection,
-    } = useOrdersTableController(debouncedImportFileIds, density, csvSelector.includeManual);
+    } = useOrdersTableController(debouncedImportFileIds, density);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
     const [showDeleteDialog, openDeleteDialog, closeDeleteDialog, mountDeleteDialog] = useDialog();
@@ -113,14 +113,12 @@ const OrdersTable = () => {
                         <CsvFileSelector
                             files={csvSelector.files}
                             selectedIds={csvSelector.selectedIds}
-                            includeManual={csvSelector.includeManual}
                             isDeleting={csvSelector.isDeleting}
                             onToggle={csvSelector.toggleFile}
                             onSelectAll={csvSelector.selectAll}
                             onDeselectAll={csvSelector.deselectAll}
                             onSelectOnly={csvSelector.selectOnly}
                             onDelete={csvSelector.deleteFile}
-                            onToggleIncludeManual={csvSelector.toggleIncludeManual}
                         />
                     </Stack>
                     <Stack direction='row' spacing={1.5} alignItems='center'>
