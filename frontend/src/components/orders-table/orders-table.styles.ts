@@ -36,11 +36,6 @@ export const bodyContainer: SxProps<Theme> = {
     overflow: 'auto',
     overscrollBehavior: 'none',
     bgcolor: 'transparent',
-    display: 'flex',
-    flexDirection: 'column',
-    '& > table': {
-        flex: 1,
-    },
 };
 
 export const table: SxProps<Theme> = {

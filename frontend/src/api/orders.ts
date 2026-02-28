@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse, ImportResponse } from '../types/order';
+import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse, ImportResponse, ImportFileResponse, MapCountyResponse } from '../types/order';
 
 export const ordersApi = {
     list: async (params: OrdersParams): Promise<{ items: Order[]; total: number }> => {
@@ -22,6 +22,11 @@ export const ordersApi = {
         return apiClient.post<Order>('/orders', payload).then((r) => r.data);
     },
 
+    counties: async (): Promise<MapCountyResponse[]> => {
+        const response = await apiClient.get<MapCountyResponse[]>('/map/counties');
+        return response.data;
+    },
+
     import: (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -30,5 +35,10 @@ export const ordersApi = {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);
+    },
+
+    importFiles: async (params: { page?: number; size?: number } = {}): Promise<PaginatedResponse<ImportFileResponse>> => {
+        const response = await apiClient.get<PaginatedResponse<ImportFileResponse>>('/orders/import-files', { params });
+        return response.data;
     },
 };

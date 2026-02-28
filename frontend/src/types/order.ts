@@ -76,3 +76,27 @@ export interface ImportResponse {
     failed: number;
     errors?: string[];
 }
+
+export interface ImportFileResponse {
+    id: string;
+    original_filename: string;
+    file_size_bytes: number;
+    total_records: number;
+    successful_records: number;
+    failed_records: number;
+    out_of_ny_records: number;
+    duration_ms: number;
+    records_per_second: number;
+    imported_at: string;
+    status: string;
+}
+
+export interface MapCountyResponse {
+    county: string;
+    order_count: number;
+    total_subtotal: number;
+    total_tax: number;
+    total_revenue: number;
+    average_tax_rate: number;
+    average_order_value: number;
+}
