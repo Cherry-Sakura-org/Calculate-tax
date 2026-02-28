@@ -74,7 +74,7 @@ export const useImportOrders = () => {
 
 export const useDownloadOrdersCsv = () =>
     useMutation({
-        mutationFn: ordersApi.downloadCsv,
+        mutationFn: (params: Omit<OrdersParams, 'page' | 'size'> = {}) => ordersApi.downloadCsv(params),
         onError: () => toast.error('Failed to download CSV'),
     });
 

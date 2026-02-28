@@ -8,8 +8,8 @@ export const ordersApi = {
         return { items: data.content, total: data.page.totalElements };
     },
 
-    downloadCsv: async () => {
-        const response = await apiClient.get('/orders/export', { responseType: 'blob' });
+    downloadCsv: async (params: Omit<OrdersParams, 'page' | 'size'> = {}) => {
+        const response = await apiClient.get('/orders/export', { params, responseType: 'blob' });
         const url = URL.createObjectURL(response.data);
         const a = document.createElement('a');
         a.href = url;
