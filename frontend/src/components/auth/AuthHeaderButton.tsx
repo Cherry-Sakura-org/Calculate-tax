@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Avatar, Menu, MenuItem, Typography } from '@mui/material';
-import ArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { Box, Typography, IconButton, Tooltip } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useCurrentUser, useLogout } from '../../hooks/auth';
 
 export function AuthHeaderButton() {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const { data: user } = useCurrentUser();
     const logout = useLogout();
     const navigate = useNavigate();
@@ -13,22 +11,19 @@ export function AuthHeaderButton() {
     if (!user) return null;
 
     const handleLogout = () => {
-        setAnchorEl(null);
         logout();
         navigate('/login');
     };
 
     return (
-        <>
-            <Button onClick={(e) => setAnchorEl(e.currentTarget)} endIcon={<ArrowDownIcon />}>
-                <Avatar>{user.username.slice(0, 2)}</Avatar>
-                <Typography>{user.username}</Typography>
-            </Button>
-
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-        </>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography variant='body2' color='text.primary'>{user.email}</Typography>
+            <Tooltip title='Logout'>
+                <IconButton size='small' onClick={handleLogout}>
+                    <LogoutIcon fontSize='small' />
+                </IconButton>
+            </Tooltip>
+        </Box>
     );
 }
 
