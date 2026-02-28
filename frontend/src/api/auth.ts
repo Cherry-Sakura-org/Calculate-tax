@@ -27,10 +27,10 @@ export const authApi = {
 
             const user = mockUsers.find((u) => u.email === payload.email);
             if (!user) {
-                throw createAuthError('USER_NOT_FOUND', 'Користувача з таким email не знайдено');
+                throw createAuthError('USER_NOT_FOUND', 'No user found with this email');
             }
             if (payload.password.length < 4) {
-                throw createAuthError('INVALID_PASSWORD', 'Невірний пароль');
+                throw createAuthError('INVALID_PASSWORD', 'Invalid password');
             }
 
             const token = `mock-token-${user.id}-${Date.now()}`;
@@ -42,7 +42,7 @@ export const authApi = {
             if (error && typeof error === 'object' && 'code' in error) {
                 throw error;
             }
-            throw createAuthError('UNKNOWN_ERROR', 'Помилка входу', { originalError: error });
+            throw createAuthError('UNKNOWN_ERROR', 'Login failed', { originalError: error });
         }
     },
 
@@ -52,7 +52,7 @@ export const authApi = {
 
             const exists = mockUsers.find((u) => u.email === payload.email);
             if (exists) {
-                throw createAuthError('USER_EXISTS', 'Користувач з таким email вже існує');
+                throw createAuthError('USER_EXISTS', 'A user with this email already exists');
             }
 
             const newUser: AuthUser = {
@@ -73,7 +73,7 @@ export const authApi = {
             if (error && typeof error === 'object' && 'code' in error) {
                 throw error;
             }
-            throw createAuthError('UNKNOWN_ERROR', 'Помилка реєстрації', { originalError: error });
+            throw createAuthError('UNKNOWN_ERROR', 'Registration failed', { originalError: error });
         }
     },
 

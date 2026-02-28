@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import {
     Drawer,
     Box,
@@ -9,16 +10,20 @@ import {
     Tooltip,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import PersonIcon from '@mui/icons-material/Person';
-import { useDialog } from '../../hooks/use-dialog';
 import { useCurrentUser, useLogout } from '../../hooks/auth';
-import { AuthDialog } from '../auth/AuthDialog';
 import { AuthUser } from '../../types/auth';
 import * as styles from './sidebar.styles';
 
 function UserSection({ user }: { user: AuthUser }) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const logout = useLogout();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        setAnchorEl(null);
+        logout();
+        navigate('/login');
+    };
 
     return (
         <>
@@ -40,34 +45,20 @@ function UserSection({ user }: { user: AuthUser }) {
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             >
-                <MenuItem>Profile</MenuItem>
-                <MenuItem>History</MenuItem>
-                <MenuItem onClick={() => logout()}>Exit</MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </Menu>
         </>
     );
 }
 
 function AuthSection() {
-    const [showDialog, openDialog, closeDialog, mountDialog] = useDialog();
     const { data: user } = useCurrentUser();
+
+    if (!user) return null;
 
     return (
         <Box sx={styles.authSection}>
-            {user ? (
-                <UserSection user={user} />
-            ) : (
-                <>
-                    <Tooltip title='Sign In' placement='right'>
-                        <IconButton onClick={openDialog} sx={styles.signInButton}>
-                            <PersonIcon />
-                        </IconButton>
-                    </Tooltip>
-                    {mountDialog && (
-                        <AuthDialog open={showDialog} onClose={closeDialog} />
-                    )}
-                </>
-            )}
+            <UserSection user={user} />
         </Box>
     );
 }
