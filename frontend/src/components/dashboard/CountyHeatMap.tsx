@@ -126,7 +126,9 @@ export default function CountyHeatMap() {
 
     return (
         <Box sx={styles.container}>
-            <Typography sx={styles.title}>Orders by County</Typography>
+            <Typography sx={styles.title}>
+                {METRIC_OPTIONS.find((o) => o.value === metric)?.label} by County
+            </Typography>
 
             <ToggleButtonGroup value={metric} exclusive onChange={handleMetricChange} size='small' sx={styles.toggleGroup}>
                 {METRIC_OPTIONS.map((opt) => (

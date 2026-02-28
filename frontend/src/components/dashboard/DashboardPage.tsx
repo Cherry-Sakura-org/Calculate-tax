@@ -45,8 +45,8 @@ export default function DashboardPage() {
         },
         {
             label: 'Total Revenue',
-            value: formatCurrency(data.total_revenue),
-            subtitle: `Subtotal: ${formatCurrency(data.total_subtotal)}`,
+            value: formatCurrency(data.total_subtotal),
+            subtitle: `With tax: ${formatCurrency(data.total_revenue)}`,
         },
         {
             label: 'Tax Collected',
