@@ -48,6 +48,7 @@ const OrdersTable = () => {
         rowVirtualizer,
         isFetchingNextPage,
         hasNextPage,
+        apiParams,
     } = useOrdersTableController(debouncedImportFileIds);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
@@ -100,7 +101,7 @@ const OrdersTable = () => {
                             variant='contained'
                             size='small'
                             startIcon={<FileDownloadIcon />}
-                            onClick={() => downloadCsv()}
+                            onClick={() => downloadCsv(apiParams)}
                             disabled={isDownloading}
                             sx={styles.actionButton}
                         >
