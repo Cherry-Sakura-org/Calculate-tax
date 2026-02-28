@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     Box,
     Button,
+    Checkbox,
     CircularProgress,
     Table,
     TableBody,
@@ -18,6 +19,7 @@ import {
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ViewStreamIcon from '@mui/icons-material/ViewStream';
 import ViewHeadlineIcon from '@mui/icons-material/ViewHeadline';
 import NewOrderButton from '../manual-order-create/NewOrderButton';
@@ -26,6 +28,7 @@ import { CsvFileSelector, useCsvFileSelector } from '../csv-file-selector';
 import { useDialog } from '../../hooks/use-dialog';
 import { useDownloadOrdersCsv } from '../../api/use-orders';
 import { useOrdersTableController, type TableDensity } from './hooks';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 import * as styles from './orders-table.styles';
 
 const OrdersTable = () => {
@@ -54,16 +57,26 @@ const OrdersTable = () => {
         isFetchingNextPage,
         hasNextPage,
         apiParams,
+        selection,
     } = useOrdersTableController(debouncedImportFileIds, density);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
+    const [showDeleteDialog, openDeleteDialog, closeDeleteDialog, mountDeleteDialog] = useDialog();
     const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
 
     const isSlim = density === 'slim';
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
+    const handleDeleteConfirm = useCallback(() => {
+        // TODO: connect to backend delete API
+        // Example: deleteOrders([...selection.selectedIds]).then(() => { ... });
+        selection.clearSelection();
+        closeDeleteDialog();
+    }, [selection, closeDeleteDialog]);
+
     const colGroup = (
         <colgroup>
+            <col style={{ width: 48 }} />
             {table.getAllColumns().map((col) => {
                 const w = (col.columnDef.meta as { width?: number })?.width;
                 return <col key={col.id} style={w ? { width: w } : undefined} />;
@@ -95,6 +108,18 @@ const OrdersTable = () => {
                         />
                     </Stack>
                     <Stack direction='row' spacing={1.5} alignItems='center'>
+                        {selection.someSelected && (
+                            <Button
+                                variant='outlined'
+                                size='small'
+                                color='error'
+                                startIcon={<DeleteOutlineIcon />}
+                                onClick={openDeleteDialog}
+                                sx={styles.actionButton}
+                            >
+                                Delete selected ({selection.selectedIds.size})
+                            </Button>
+                        )}
                         <ToggleButtonGroup
                             value={density}
                             exclusive
@@ -140,6 +165,7 @@ const OrdersTable = () => {
                         <TableHead>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
+                                    <TableCell padding='checkbox' sx={styles.headerCell} />
                                     {headerGroup.headers.map((header) => (
                                         <TableCell key={header.id} sx={styles.headerCell}>
                                             {flexRender(
@@ -162,7 +188,7 @@ const OrdersTable = () => {
                             {isLoading ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={table.getAllColumns().length}
+                                        colSpan={table.getAllColumns().length + 1}
                                         sx={styles.emptyStateCell}
                                     >
                                         <Box sx={styles.emptyStateContainer}>
@@ -180,7 +206,7 @@ const OrdersTable = () => {
                             ) : rows.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={table.getAllColumns().length}
+                                        colSpan={table.getAllColumns().length + 1}
                                         sx={styles.emptyStateCell}
                                     >
                                         <Box sx={styles.emptyStateContainer}>
@@ -202,7 +228,7 @@ const OrdersTable = () => {
                                     {virtualRows[0]?.start > 0 && (
                                         <tr>
                                             <td
-                                                colSpan={table.getAllColumns().length}
+                                                colSpan={table.getAllColumns().length + 1}
                                                 style={{
                                                     height: virtualRows[0].start,
                                                     padding: 0,
@@ -223,12 +249,20 @@ const OrdersTable = () => {
                                                 hover
                                                 data-index={virtualRow.index}
                                                 ref={rowVirtualizer.measureElement}
+                                                selected={selection.selectedIds.has(row.original.id)}
                                                 sx={
                                                     isOutOfState
                                                         ? styles.outOfStateRow
                                                         : styles.dataRow
                                                 }
                                             >
+                                                <TableCell padding='checkbox'>
+                                                    <Checkbox
+                                                        size='small'
+                                                        checked={selection.selectedIds.has(row.original.id)}
+                                                        onChange={() => selection.toggleOne(row.original.id)}
+                                                    />
+                                                </TableCell>
                                                 {row.getVisibleCells().map((cell) => {
                                                     const meta = cell.column.columnDef.meta as {
                                                         highlighted?: boolean;
@@ -268,7 +302,7 @@ const OrdersTable = () => {
                                         return paddingBottom > 0 ? (
                                             <tr>
                                                 <td
-                                                    colSpan={table.getAllColumns().length}
+                                                    colSpan={table.getAllColumns().length + 1}
                                                     style={{
                                                         height: paddingBottom,
                                                         padding: 0,
@@ -306,6 +340,15 @@ const OrdersTable = () => {
 
             {mountImportDialog && (
                 <OrdersImportDialog open={showImportDialog} onClose={closeImportDialog} />
+            )}
+
+            {mountDeleteDialog && (
+                <DeleteConfirmDialog
+                    open={showDeleteDialog}
+                    count={selection.selectedIds.size}
+                    onClose={closeDeleteDialog}
+                    onConfirm={handleDeleteConfirm}
+                />
             )}
         </>
     );

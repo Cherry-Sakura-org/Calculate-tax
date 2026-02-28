@@ -2,7 +2,7 @@ import { Box, Chip, Stack, Tooltip, Typography } from '@mui/material';
 import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateTime } from 'luxon';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'react-toastify';
 import {
     COUNTY_TO_REGION,
@@ -227,7 +227,19 @@ const buildApiParams = (
     return params;
 };
 
+export interface SelectionState {
+    selectedIds: Set<string>;
+    setSelectedIds: Dispatch<SetStateAction<Set<string>>>;
+    toggleOne: (id: string) => void;
+    toggleAll: () => void;
+    clearSelection: () => void;
+    allSelected: boolean;
+    someSelected: boolean;
+}
+
 export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default') => {
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
     const [filters, setFilters] = useState<Record<string, RangeFilterValue>>({
         latitude: { ...EMPTY_RANGE },
         longitude: { ...EMPTY_RANGE },
@@ -539,6 +551,43 @@ export const useOrdersTableController = (importFileIds?: string, density: TableD
         }
     }, [virtualItems, rows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+    // Clear selection when data changes (filters, sort, import file change)
+    useEffect(() => {
+        setSelectedIds(new Set());
+    }, [apiParams]);
+
+    const toggleOne = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
+    const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.original.id));
+    const someSelected = selectedIds.size > 0;
+
+    const toggleAll = useCallback(() => {
+        if (allSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(rows.map((r) => r.original.id)));
+        }
+    }, [allSelected, rows]);
+
+    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+    const selection: SelectionState = {
+        selectedIds,
+        setSelectedIds,
+        toggleOne,
+        toggleAll,
+        clearSelection,
+        allSelected,
+        someSelected,
+    };
+
     return {
         table,
         rows,
@@ -553,5 +602,6 @@ export const useOrdersTableController = (importFileIds?: string, density: TableD
         sortColumn,
         sortDirection,
         apiParams,
+        selection,
     };
 };
