@@ -56,10 +56,6 @@ export const sidebarTitle: SxProps<Theme> = {
 export const rankRow: SxProps<Theme> = {
     py: 0.75,
     px: 1,
-    borderRadius: 1,
-    '&:nth-of-type(odd)': {
-        bgcolor: 'action.hover',
-    },
 };
 
 export const rankHeader: SxProps<Theme> = {

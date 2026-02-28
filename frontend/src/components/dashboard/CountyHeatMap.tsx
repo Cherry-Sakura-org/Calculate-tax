@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Box, Typography, ToggleButtonGroup, ToggleButton, CircularProgress, IconButton } from '@mui/material';
+import { Box, Typography, ToggleButtonGroup, ToggleButton, Skeleton, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -103,9 +103,20 @@ export default function CountyHeatMap() {
     if (boundariesLoading || dataLoading) {
         return (
             <Box sx={styles.container}>
-                <Typography sx={styles.title}>Orders by County</Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                    <CircularProgress />
+                <Skeleton width={180} height={28} sx={{ mb: 2 }} />
+                <Box sx={styles.content}>
+                    <Box sx={styles.mapWrapper}>
+                        <Skeleton variant='rectangular' height={400} sx={{ borderRadius: 1 }} />
+                    </Box>
+                    <Box sx={styles.sidebar}>
+                        <Skeleton width={160} height={20} sx={{ mb: 1 }} />
+                        {Array.from({ length: 10 }, (_, i) => (
+                            <Box key={i} sx={{ py: 0.75, px: 1 }}>
+                                <Skeleton width={`${70 + Math.random() * 30}%`} height={18} />
+                                <Skeleton height={4} sx={{ mt: 0.5, borderRadius: 0.5 }} />
+                            </Box>
+                        ))}
+                    </Box>
                 </Box>
             </Box>
         );

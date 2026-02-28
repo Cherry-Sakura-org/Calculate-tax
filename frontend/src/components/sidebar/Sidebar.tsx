@@ -1,80 +1,76 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import {
     Drawer,
     Box,
+    List,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
     IconButton,
-    Avatar,
-    Menu,
-    MenuItem,
     Tooltip,
 } from '@mui/material';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import { useCurrentUser, useLogout } from '../../hooks/auth';
-import { AuthUser } from '../../types/auth';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import * as styles from './sidebar.styles';
 
-function UserSection({ user }: { user: AuthUser }) {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const logout = useLogout();
-    const navigate = useNavigate();
+const NAV_LINKS = [
+    { label: 'Orders', to: '/', icon: <ListAltIcon fontSize='small' /> },
+    { label: 'Dashboard', to: '/dashboard', icon: <DashboardIcon fontSize='small' /> },
+];
 
-    const handleLogout = () => {
-        setAnchorEl(null);
-        logout();
-        navigate('/login');
-    };
+export default function Sidebar() {
+    const [open, setOpen] = useState(true);
+    const { pathname } = useLocation();
 
     return (
-        <>
-            <Tooltip title={user.username} placement='right'>
-                <IconButton
-                    onClick={(e) => setAnchorEl(e.currentTarget)}
-                    sx={styles.userButton}
-                >
-                    <Avatar sx={{ width: 32, height: 32, fontSize: '0.75rem' }}>
-                        {user.username.slice(0, 2)}
-                    </Avatar>
-                </IconButton>
-            </Tooltip>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={() => setAnchorEl(null)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            >
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-        </>
-    );
-}
-
-function AuthSection() {
-    const { data: user } = useCurrentUser();
-
-    if (!user) return null;
-
-    return (
-        <Box sx={styles.authSection}>
-            <UserSection user={user} />
-        </Box>
-    );
-}
-
-const Sidebar = () => {
-    return (
-        <Drawer variant='permanent' sx={styles.drawer}>
-            <Box sx={styles.logoSection}>
-                <Box sx={styles.iconBox}>
-                    <LocalShippingIcon sx={styles.shippingIcon} />
-                </Box>
+        <Drawer variant='permanent' sx={styles.drawer(open)}>
+            <Box sx={{ display: 'flex', justifyContent: open ? 'flex-end' : 'center', p: 1 }}>
+                <Tooltip title={open ? 'Collapse' : 'Expand'} placement='right'>
+                    <IconButton onClick={() => setOpen(!open)} sx={styles.toggleButton}>
+                        {open ? <ChevronLeftIcon fontSize='small' /> : <MenuIcon fontSize='small' />}
+                    </IconButton>
+                </Tooltip>
             </Box>
 
-            <AuthSection />
+            <List disablePadding sx={styles.navList}>
+                {NAV_LINKS.map((link) => {
+                    const active = pathname === link.to;
+                    return (
+                        <Tooltip
+                            key={link.to}
+                            title={open ? '' : link.label}
+                            placement='right'
+                            arrow
+                        >
+                            <ListItemButton
+                                component={Link}
+                                to={link.to}
+                                selected={active}
+                                sx={styles.navItem(open)}
+                            >
+                                <ListItemIcon sx={styles.navIcon(active, open)}>
+                                    {link.icon}
+                                </ListItemIcon>
+                                {open && (
+                                    <ListItemText
+                                        primary={link.label}
+                                        slotProps={{
+                                            primary: {
+                                                fontSize: '0.875rem',
+                                                fontWeight: active ? 600 : 400,
+                                                noWrap: true,
+                                            },
+                                        }}
+                                    />
+                                )}
+                            </ListItemButton>
+                        </Tooltip>
+                    );
+                })}
+            </List>
         </Drawer>
     );
-};
-
-export default Sidebar;
+}
