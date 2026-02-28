@@ -24,6 +24,12 @@ import { useOrdersTableController } from './hooks';
 import * as styles from './orders-table.styles';
 
 const OrdersTable = () => {
+    const csvSelector = useCsvFileSelector();
+
+    const importFileIds = csvSelector.selectedIds.size > 0
+        ? [...csvSelector.selectedIds].join(',')
+        : undefined;
+
     const {
         table,
         rows,
@@ -33,11 +39,10 @@ const OrdersTable = () => {
         rowVirtualizer,
         isFetchingNextPage,
         hasNextPage,
-    } = useOrdersTableController();
+    } = useOrdersTableController(importFileIds);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
     const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
-    const csvSelector = useCsvFileSelector();
 
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 

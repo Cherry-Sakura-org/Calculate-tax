@@ -1,7 +1,9 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { ordersApi } from './orders';
 import type { OrdersParams } from '../types/order';
+import type { JurisdictionNode } from '../components/orders-table/filters/types';
 
 export const ordersKeys = {
     all: ['orders'] as const,
@@ -46,11 +48,26 @@ export const useCreateOrder = () => {
     });
 };
 
+export const importFilesKeys = {
+    all: ['importFiles'] as const,
+    list: () => [...importFilesKeys.all, 'list'] as const,
+};
+
+export const useImportFiles = () =>
+    useQuery({
+        queryKey: importFilesKeys.list(),
+        queryFn: () => ordersApi.importFiles({ size: 1000 }),
+        select: (data) => data.content,
+    });
+
 export const useImportOrders = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ordersApi.import,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ordersKeys.lists() }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: importFilesKeys.all });
+        },
         onError: () => toast.error('Failed to import orders'),
     });
 };
@@ -60,3 +77,64 @@ export const useDownloadOrdersCsv = () =>
         mutationFn: ordersApi.downloadCsv,
         onError: () => toast.error('Failed to download CSV'),
     });
+
+/** Known NY regions and the counties that belong to each. */
+export const REGION_COUNTIES: Record<string, string[]> = {
+    'NYC': [
+        'New York', 'Kings', 'Queens', 'Bronx', 'Richmond',
+    ],
+    'Long Island': [
+        'Nassau', 'Suffolk',
+    ],
+    'Hudson Valley': [
+        'Westchester', 'Rockland', 'Orange', 'Dutchess', 'Putnam', 'Sullivan', 'Ulster',
+    ],
+    'Capital District': [
+        'Albany', 'Rensselaer', 'Saratoga', 'Schenectady',
+    ],
+    'Upstate': [],   // fallback — any NY county not in another region
+};
+
+export const COUNTY_TO_REGION = new Map<string, string>();
+for (const [region, counties] of Object.entries(REGION_COUNTIES)) {
+    for (const c of counties) {
+        COUNTY_TO_REGION.set(c.toLowerCase(), region);
+    }
+}
+
+export const useJurisdictions = () => {
+    const { data: counties, isLoading } = useQuery({
+        queryKey: ['map', 'counties'],
+        queryFn: ordersApi.counties,
+        staleTime: 10 * 60 * 1000,
+    });
+
+    const tree = useMemo((): JurisdictionNode[] => {
+        if (!counties?.length) return [];
+
+        const regionMap = new Map<string, JurisdictionNode[]>();
+        for (const region of Object.keys(REGION_COUNTIES)) {
+            regionMap.set(region, []);
+        }
+
+        for (const c of counties) {
+            const region = COUNTY_TO_REGION.get(c.county.toLowerCase()) ?? 'Upstate';
+            const children = regionMap.get(region) ?? [];
+            children.push({ id: c.county, label: c.county });
+            regionMap.set(region, children);
+        }
+
+        const nodes: JurisdictionNode[] = [];
+        for (const [region, children] of regionMap) {
+            if (children.length === 0) continue;
+            children.sort((a, b) => a.label.localeCompare(b.label));
+            nodes.push({ id: `region:${region}`, label: region, children });
+        }
+
+        nodes.push({ id: 'region:Out of State', label: 'Out of State' });
+
+        return nodes;
+    }, [counties]);
+
+    return { tree, isLoading };
+};

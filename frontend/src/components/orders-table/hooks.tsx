@@ -4,7 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateTime } from 'luxon';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useInfiniteOrders } from '../../api/use-orders';
+import { COUNTY_TO_REGION, REGION_COUNTIES, useInfiniteOrders, useJurisdictions } from '../../api/use-orders';
 import type { Order, OrdersParams } from '../../types/order';
 import ColumnHeader from './filters/ColumnHeader';
 import type { FilterType, RangeFilterValue, SortDirection } from './filters/types';
@@ -31,6 +31,39 @@ const HighlightCell = ({ children }: { children: React.ReactNode }) => (
         {children}
     </Typography>
 );
+
+const TaxBreakdown = ({ order }: { order: Order }) => {
+    const subtotal = order.subtotal ?? 0;
+    const fmt = (rate: number) => `$${(subtotal * rate).toFixed(2)}`;
+    return (
+        <Box sx={styles.breakdownContainer}>
+            <Typography variant='caption' sx={styles.breakdownTitle}>
+                Tax Breakdown
+            </Typography>
+            {[
+                { label: 'State', value: order.taxBreakdown.state_rate },
+                { label: 'County', value: order.taxBreakdown.county_rate },
+                { label: 'City', value: order.taxBreakdown.city_rate },
+                { label: 'Special', value: order.taxBreakdown.special_rates },
+            ].map((item) => (
+                <Stack
+                    key={item.label}
+                    direction='row'
+                    justifyContent='space-between'
+                    spacing={2}
+                    sx={styles.breakdownRow}
+                >
+                    <Typography variant='caption' color='text.secondary'>
+                        {item.label}
+                    </Typography>
+                    <Typography variant='caption' sx={styles.breakdownValue}>
+                        {fmt(item.value)}
+                    </Typography>
+                </Stack>
+            ))}
+        </Box>
+    );
+};
 
 const TaxRateBreakdown = ({ order }: { order: Order }) => (
     <Box sx={styles.breakdownContainer}>
@@ -87,10 +120,18 @@ const SORT_FIELD_MAP: Record<string, string> = {
  * Builds API query params from the current filter and sort state.
  * Empty/unset filters are omitted.
  */
+/**
+ * Extracts the region name from a jurisdiction node id.
+ * Region node ids are prefixed with "region:", e.g. "region:NYC".
+ */
+const parseRegion = (id: string): string | null =>
+    id.startsWith('region:') ? id.slice(7) : null;
+
 const buildApiParams = (
     filters: Record<string, RangeFilterValue>,
     sortColumn: string | null,
     sortDirection: SortDirection,
+    jurisdictionIds: Set<string>,
 ): Omit<OrdersParams, 'page' | 'size'> => {
     const params: Omit<OrdersParams, 'page' | 'size'> = {};
 
@@ -116,6 +157,55 @@ const buildApiParams = (
     if (filters.total_amount.from) params.minTotal = Number(filters.total_amount.from);
     if (filters.total_amount.to) params.maxTotal = Number(filters.total_amount.to);
 
+    // Jurisdiction filter — selected leaf IDs are county names or "region:Out of State"
+    if (jurisdictionIds.size > 0) {
+        const directRegions: string[] = [];
+        const counties: string[] = [];
+
+        for (const id of jurisdictionIds) {
+            const region = parseRegion(id);
+            if (region) {
+                // Leaf node that is itself a region (e.g. "Out of State")
+                directRegions.push(region);
+            } else {
+                counties.push(id);
+            }
+        }
+
+        // Group selected counties by their region
+        const countiesByRegion = new Map<string, string[]>();
+        for (const c of counties) {
+            const r = COUNTY_TO_REGION.get(c.toLowerCase()) ?? 'Upstate';
+            const list = countiesByRegion.get(r) ?? [];
+            list.push(c);
+            countiesByRegion.set(r, list);
+        }
+
+        // Check which regions are fully selected (all known counties checked)
+        const fullRegions: string[] = [...directRegions];
+        const partialCounties: string[] = [];
+
+        for (const [region, selected] of countiesByRegion) {
+            const allCounties = REGION_COUNTIES[region] ?? [];
+            if (allCounties.length > 0 && selected.length >= allCounties.length) {
+                fullRegions.push(region);
+            } else {
+                partialCounties.push(...selected);
+            }
+        }
+
+        if (fullRegions.length === 1 && partialCounties.length === 0) {
+            params.region = fullRegions[0];
+        } else if (partialCounties.length === 1 && fullRegions.length === 0) {
+            params.county = partialCounties[0];
+        } else if (fullRegions.length > 0 && partialCounties.length === 0) {
+            // Multiple full regions — send first region
+            params.region = fullRegions[0];
+        } else if (partialCounties.length > 0) {
+            params.county = partialCounties[0];
+        }
+    }
+
     // Sort
     if (sortColumn && sortDirection) {
         const apiField = SORT_FIELD_MAP[sortColumn] ?? sortColumn;
@@ -125,7 +215,7 @@ const buildApiParams = (
     return params;
 };
 
-export const useOrdersTableController = () => {
+export const useOrdersTableController = (importFileIds?: string) => {
     const [filters, setFilters] = useState<Record<string, RangeFilterValue>>({
         latitude: { ...EMPTY_RANGE },
         longitude: { ...EMPTY_RANGE },
@@ -137,13 +227,21 @@ export const useOrdersTableController = () => {
     });
 
     const [jurisdictionFilter, setJurisdictionFilter] = useState<Set<string>>(new Set());
+    const jurisdictionFilterRef = useRef(jurisdictionFilter);
+    jurisdictionFilterRef.current = jurisdictionFilter;
+
+    const { tree: jurisdictionTree, isLoading: jurisdictionLoading } = useJurisdictions();
 
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
     const apiParams = useMemo(
-        () => buildApiParams(filters, sortColumn, sortDirection),
-        [filters, sortColumn, sortDirection],
+        () => {
+            const params = buildApiParams(filters, sortColumn, sortDirection, jurisdictionFilter);
+            if (importFileIds) params.importFileIds = importFileIds;
+            return params;
+        },
+        [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds],
     );
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders(apiParams);
@@ -197,28 +295,22 @@ export const useOrdersTableController = () => {
                 header: () => (
                     <ColumnHeader
                         label='Latitude'
-                        filterType='range-number'
-                        rangeValue={filters.latitude}
-                        onRangeChange={updateFilter('latitude')}
                         sortDirection={getSortDirection('latitude')}
                         onSort={toggleSort('latitude')}
                     />
                 ),
-                meta: { width: 120, filterType: 'range-number', filterKey: 'latitude' } satisfies ColumnFilterMeta,
+                meta: { width: 120 },
                 cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
             }),
             columnHelper.accessor('longitude', {
                 header: () => (
                     <ColumnHeader
                         label='Longitude'
-                        filterType='range-number'
-                        rangeValue={filters.longitude}
-                        onRangeChange={updateFilter('longitude')}
                         sortDirection={getSortDirection('longitude')}
                         onSort={toggleSort('longitude')}
                     />
                 ),
-                meta: { width: 130, filterType: 'range-number', filterKey: 'longitude' } satisfies ColumnFilterMeta,
+                meta: { width: 130 },
                 cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
             }),
             columnHelper.accessor('jurisdictions', {
@@ -226,10 +318,10 @@ export const useOrdersTableController = () => {
                     <ColumnHeader
                         label='Jurisdictions'
                         filterType='jurisdiction'
-                        jurisdictionValue={jurisdictionFilter}
+                        jurisdictionValue={jurisdictionFilterRef.current}
                         onJurisdictionChange={setJurisdictionFilter}
-                        sortDirection={getSortDirection('jurisdictions')}
-                        onSort={toggleSort('jurisdictions')}
+                        jurisdictionTree={jurisdictionTree}
+                        jurisdictionLoading={jurisdictionLoading}
                     />
                 ),
                 meta: { filterType: 'jurisdiction' } satisfies ColumnFilterMeta,
@@ -322,9 +414,19 @@ export const useOrdersTableController = () => {
                 ),
                 meta: { highlighted: true, width: 80, filterType: 'range-currency', filterKey: 'tax_amount' } satisfies ColumnFilterMeta,
                 cell: (info) => (
-                    <ValueCell>
-                        {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
-                    </ValueCell>
+                    <Tooltip
+                        title={<TaxBreakdown order={info.row.original} />}
+                        arrow
+                        placement='top'
+                        slotProps={{
+                            tooltip: { sx: styles.taxRateTooltip },
+                            arrow: { sx: styles.taxRateArrow },
+                        }}
+                    >
+                        <Typography component='span' sx={styles.taxRateValue}>
+                            {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
+                        </Typography>
+                    </Tooltip>
                 ),
             }),
             columnHelper.accessor('total_amount', {
@@ -346,7 +448,7 @@ export const useOrdersTableController = () => {
                 ),
             }),
         ],
-        [filters, jurisdictionFilter, updateFilter, getSortDirection, toggleSort],
+        [filters, updateFilter, getSortDirection, toggleSort, jurisdictionTree, jurisdictionLoading],
     );
 
     const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);

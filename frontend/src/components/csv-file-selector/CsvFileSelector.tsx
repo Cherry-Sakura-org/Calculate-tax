@@ -94,7 +94,7 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
                                             size='small'
                                             checked={selectedIds.has(file.id)}
                                         />
-                                        <ListItemText primary={file.name} />
+                                        <ListItemText primary={file.original_filename} />
                                     </MenuItem>
                                 ))}
                             </MenuList>

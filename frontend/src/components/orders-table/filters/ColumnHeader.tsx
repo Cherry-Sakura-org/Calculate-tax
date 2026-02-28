@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import type { FilterType, RangeFilterValue, SortDirection } from './types';
+import type { FilterType, JurisdictionNode, RangeFilterValue, SortDirection } from './types';
 import RangeFilter from './RangeFilter';
 import JurisdictionFilter from './JurisdictionFilter';
 import * as styles from './filters.styles';
@@ -13,6 +13,8 @@ interface ColumnHeaderProps {
     onRangeChange?: (value: RangeFilterValue) => void;
     jurisdictionValue?: Set<string>;
     onJurisdictionChange?: (value: Set<string>) => void;
+    jurisdictionTree?: JurisdictionNode[];
+    jurisdictionLoading?: boolean;
     sortDirection?: SortDirection;
     onSort?: () => void;
 }
@@ -24,6 +26,8 @@ const ColumnHeader = ({
     onRangeChange,
     jurisdictionValue,
     onJurisdictionChange,
+    jurisdictionTree,
+    jurisdictionLoading,
     sortDirection,
     onSort,
 }: ColumnHeaderProps) => (
@@ -49,6 +53,8 @@ const ColumnHeader = ({
             <JurisdictionFilter
                 selectedIds={jurisdictionValue}
                 onChange={onJurisdictionChange}
+                tree={jurisdictionTree ?? []}
+                isLoading={jurisdictionLoading}
             />
         )}
     </Box>
