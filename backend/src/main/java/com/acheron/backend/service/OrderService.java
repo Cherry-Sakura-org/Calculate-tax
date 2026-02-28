@@ -138,6 +138,42 @@ public class OrderService {
         return count;
     }
 
+    @Transactional
+    public long deleteByImportFileId(UUID importFileId) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> spec = Specification.where(OrderSpecification.hasImportFileId(importFileId));
+
+        if (currentUser.getRole() != Role.SUPER_ADMIN) {
+            spec = spec.and(OrderSpecification.createdByUserId(currentUser.getId()));
+        }
+
+        List<Order> orders = orderRepository.findAll(spec);
+        orderRepository.deleteAll(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders for importFileId={}", orders.size(), importFileId);
+        return orders.size();
+    }
+
+    @Transactional
+    public long deleteByFilter(Specification<Order> spec, UUID userIdFilter) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> finalSpec = spec;
+
+        if (currentUser.getRole() == Role.SUPER_ADMIN) {
+            if (userIdFilter != null) {
+                finalSpec = finalSpec.and(OrderSpecification.createdByUserId(userIdFilter));
+            }
+        } else {
+            finalSpec = finalSpec.and(OrderSpecification.createdByUserId(currentUser.getId()));
+        }
+
+        List<Order> orders = orderRepository.findAll(finalSpec);
+        orderRepository.deleteAll(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders by filter", orders.size());
+        return orders.size();
+    }
+
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }

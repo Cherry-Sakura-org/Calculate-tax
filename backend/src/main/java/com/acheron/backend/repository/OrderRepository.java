@@ -42,4 +42,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
 
     @Query("SELECT o FROM Order o WHERE o.isWithinNewYork = true")
     List<Order> findAllWithinNewYork();
+
+    List<Order> findAllByImportFileId(UUID importFileId);
+
+    List<Order> findAllByImportFileIdIn(List<UUID> importFileIds);
 }

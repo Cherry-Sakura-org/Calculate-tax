@@ -247,6 +247,81 @@ public class OrderApi {
     }
 
     @Operation(
+            summary = "Delete orders by filter",
+            description = """
+                    Soft-deletes all orders matching the provided filters.
+                    Supports **all the same filters** as `GET /orders`.
+                    Returns the count of deleted orders."""
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orders deleted"),
+            @ApiResponse(responseCode = "400", description = "No filters provided")
+    })
+    @DeleteMapping("/by-filter")
+    public ResponseEntity<java.util.Map<String, Object>> deleteByFilter(
+            @Parameter(description = "Min latitude") @RequestParam(required = false) BigDecimal minLat,
+            @Parameter(description = "Max latitude") @RequestParam(required = false) BigDecimal maxLat,
+            @Parameter(description = "Min longitude") @RequestParam(required = false) BigDecimal minLon,
+            @Parameter(description = "Max longitude") @RequestParam(required = false) BigDecimal maxLon,
+            @Parameter(description = "Min subtotal") @RequestParam(required = false) BigDecimal minSubtotal,
+            @Parameter(description = "Max subtotal") @RequestParam(required = false) BigDecimal maxSubtotal,
+            @Parameter(description = "Min total") @RequestParam(required = false) BigDecimal minTotal,
+            @Parameter(description = "Max total") @RequestParam(required = false) BigDecimal maxTotal,
+            @Parameter(description = "Min tax rate") @RequestParam(required = false) BigDecimal minTaxRate,
+            @Parameter(description = "Max tax rate") @RequestParam(required = false) BigDecimal maxTaxRate,
+            @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
+            @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
+            @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
+            @Parameter(description = "County name") @RequestParam(required = false) String county,
+            @Parameter(description = "Region") @RequestParam(required = false) String region,
+            @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
+            @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
+            @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
+    ) {
+        Specification<Order> spec = Specification.where(OrderSpecification.hasMinLatitude(minLat))
+                .and(OrderSpecification.hasMaxLatitude(maxLat))
+                .and(OrderSpecification.hasMinLongitude(minLon))
+                .and(OrderSpecification.hasMaxLongitude(maxLon))
+                .and(OrderSpecification.hasMinSubtotal(minSubtotal))
+                .and(OrderSpecification.hasMaxSubtotal(maxSubtotal))
+                .and(OrderSpecification.hasMinTotalAmount(minTotal))
+                .and(OrderSpecification.hasMaxTotalAmount(maxTotal))
+                .and(OrderSpecification.hasMinTaxRate(minTaxRate))
+                .and(OrderSpecification.hasMaxTaxRate(maxTaxRate))
+                .and(OrderSpecification.orderedAfter(from))
+                .and(OrderSpecification.orderedBefore(to))
+                .and(OrderSpecification.isWithinNewYork(withinNewYork))
+                .and(OrderSpecification.hasCounty(county))
+                .and(OrderSpecification.hasRegion(region))
+                .and(OrderSpecification.hasImportFileId(importFileId))
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
+
+        long deleted = orderService.deleteByFilter(spec, userId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Orders deleted by filter",
+                "deletedCount", deleted
+        ));
+    }
+
+    @Operation(
+            summary = "Delete orders by import file",
+            description = "Soft-deletes all orders from a specific import file."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orders deleted")
+    })
+    @DeleteMapping("/by-import-file/{importFileId}")
+    public ResponseEntity<java.util.Map<String, Object>> deleteByImportFile(
+            @PathVariable UUID importFileId
+    ) {
+        long deleted = orderService.deleteByImportFileId(importFileId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Orders deleted for import file",
+                "deletedCount", deleted
+        ));
+    }
+
+    @Operation(
             summary = "⚠️ TEST: Delete ALL orders",
             description = "Hard-deletes ALL orders, tax breakdowns, and import files. This is a destructive test-only endpoint."
     )
