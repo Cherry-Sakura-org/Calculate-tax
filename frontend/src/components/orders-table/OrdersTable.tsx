@@ -117,7 +117,7 @@ const OrdersTable = () => {
                                 onClick={openDeleteDialog}
                                 sx={styles.actionButton}
                             >
-                                Delete selected ({selection.selectedIds.size})
+                                {selection.allSelected ? 'Delete all' : `Delete selected (${selection.selectedIds.size})`}
                             </Button>
                         )}
                         <ToggleButtonGroup
@@ -165,7 +165,15 @@ const OrdersTable = () => {
                         <TableHead>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
-                                    <TableCell padding='checkbox' sx={styles.headerCell} />
+                                    <TableCell padding='checkbox' sx={styles.headerCell}>
+                                        <Checkbox
+                                            size='small'
+                                            checked={selection.allSelected}
+                                            indeterminate={selection.someSelected && !selection.allSelected}
+                                            onChange={selection.toggleAll}
+                                            disabled={rows.length === 0}
+                                        />
+                                    </TableCell>
                                     {headerGroup.headers.map((header) => (
                                         <TableCell key={header.id} sx={styles.headerCell}>
                                             {flexRender(
