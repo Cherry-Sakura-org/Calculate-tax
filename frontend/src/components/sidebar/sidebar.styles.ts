@@ -12,6 +12,7 @@ export const drawer = (open: boolean): SxProps<Theme> => ({
         width: open ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED,
         transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         boxSizing: 'border-box',
+        border: 'none',
         borderRight: '1px solid',
         borderColor: 'divider',
         bgcolor: '#fff',

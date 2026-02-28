@@ -10,8 +10,8 @@ import {
     IconButton,
     Tooltip,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import * as styles from './sidebar.styles';
@@ -22,19 +22,11 @@ const NAV_LINKS = [
 ];
 
 export default function Sidebar() {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
     const { pathname } = useLocation();
 
     return (
         <Drawer variant='permanent' sx={styles.drawer(open)}>
-            <Box sx={{ display: 'flex', justifyContent: open ? 'flex-end' : 'center', p: 1 }}>
-                <Tooltip title={open ? 'Collapse' : 'Expand'} placement='right'>
-                    <IconButton onClick={() => setOpen(!open)} sx={styles.toggleButton}>
-                        {open ? <ChevronLeftIcon fontSize='small' /> : <MenuIcon fontSize='small' />}
-                    </IconButton>
-                </Tooltip>
-            </Box>
-
             <List disablePadding sx={styles.navList}>
                 {NAV_LINKS.map((link) => {
                     const active = pathname === link.to;
@@ -71,6 +63,14 @@ export default function Sidebar() {
                     );
                 })}
             </List>
+
+            <Box sx={{ display: 'flex', justifyContent: open ? 'flex-end' : 'center', p: 1 }}>
+                <Tooltip title={open ? 'Collapse' : 'Expand'} placement='right'>
+                    <IconButton onClick={() => setOpen(!open)} sx={styles.toggleButton}>
+                        {open ? <KeyboardDoubleArrowLeftIcon fontSize='small' /> : <KeyboardDoubleArrowRightIcon fontSize='small' />}
+                    </IconButton>
+                </Tooltip>
+            </Box>
         </Drawer>
     );
 }

@@ -302,6 +302,28 @@ export const useOrdersTableController = (importFileIds?: string) => {
                     );
                 },
             }),
+            columnHelper.accessor('timestamp', {
+                header: () => (
+                    <ColumnHeader
+                        label='ORDER CREATED'
+                        filterType='range-date'
+                        rangeValue={filters.timestamp}
+                        onRangeChange={updateFilter('timestamp')}
+                        sortDirection={getSortDirection('timestamp')}
+                        onSort={toggleSort('timestamp')}
+                    />
+                ),
+                meta: {
+                    width: 200,
+                    filterType: 'range-date',
+                    filterKey: 'timestamp',
+                } satisfies ColumnFilterMeta,
+                cell: (info) => (
+                    <MutedCell>
+                        {DateTime.fromISO(info.getValue()).toLocaleString(DateTime.DATETIME_SHORT)}
+                    </MutedCell>
+                ),
+            }),
             columnHelper.accessor('latitude', {
                 header: () => (
                     <ColumnHeader
@@ -350,26 +372,28 @@ export const useOrdersTableController = (importFileIds?: string) => {
                     );
                 },
             }),
-            columnHelper.accessor('timestamp', {
+            columnHelper.accessor('subtotal', {
                 header: () => (
                     <ColumnHeader
-                        label='ORDER CREATED'
-                        filterType='range-date'
-                        rangeValue={filters.timestamp}
-                        onRangeChange={updateFilter('timestamp')}
-                        sortDirection={getSortDirection('timestamp')}
-                        onSort={toggleSort('timestamp')}
+                        label='Subtotal'
+                        filterType='range-currency'
+                        rangeValue={filters.subtotal}
+                        onRangeChange={updateFilter('subtotal')}
+                        sortDirection={getSortDirection('subtotal')}
+                        onSort={toggleSort('subtotal')}
+                        align='right'
                     />
                 ),
                 meta: {
-                    width: 200,
-                    filterType: 'range-date',
-                    filterKey: 'timestamp',
+                    width: 150,
+                    align: 'right',
+                    filterType: 'range-currency',
+                    filterKey: 'subtotal',
                 } satisfies ColumnFilterMeta,
                 cell: (info) => (
-                    <MutedCell>
-                        {DateTime.fromISO(info.getValue()).toLocaleString(DateTime.DATETIME_SHORT)}
-                    </MutedCell>
+                    <ValueCell>
+                        {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
+                    </ValueCell>
                 ),
             }),
             columnHelper.accessor('composite_tax_rate', {
@@ -405,31 +429,6 @@ export const useOrdersTableController = (importFileIds?: string) => {
                             {formatRate(info.getValue())}
                         </Typography>
                     </Tooltip>
-                ),
-            }),
-            columnHelper.accessor('subtotal', {
-                header: () => (
-                    <ColumnHeader
-                        label='Subtotal'
-                        filterType='range-currency'
-                        rangeValue={filters.subtotal}
-                        onRangeChange={updateFilter('subtotal')}
-                        sortDirection={getSortDirection('subtotal')}
-                        onSort={toggleSort('subtotal')}
-                        align='right'
-                    />
-                ),
-                meta: {
-                    highlighted: true,
-                    width: 150,
-                    align: 'right',
-                    filterType: 'range-currency',
-                    filterKey: 'subtotal',
-                } satisfies ColumnFilterMeta,
-                cell: (info) => (
-                    <ValueCell>
-                        {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
-                    </ValueCell>
                 ),
             }),
             columnHelper.accessor('tax_amount', {
