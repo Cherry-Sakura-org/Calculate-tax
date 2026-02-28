@@ -1,5 +1,6 @@
-import { Box, Grid, Typography, Skeleton } from '@mui/material';
-import { useDashboard } from '../../api/use-dashboard';
+import { Box, Grid, Typography, Skeleton, Button, CircularProgress } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { useDashboard, useEvictCache } from '../../api/use-dashboard';
 import CountyHeatMap from './CountyHeatMap';
 import * as styles from './dashboard.styles';
 
@@ -32,6 +33,7 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
     const { data, isLoading } = useDashboard();
+    const { mutate: evictCache, isPending: isEvicting } = useEvictCache();
 
     if (isLoading) return <DashboardSkeleton />;
 
@@ -62,6 +64,18 @@ export default function DashboardPage() {
 
     return (
         <Box sx={styles.page}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+                <Button
+                    variant='outlined'
+                    size='small'
+                    startIcon={isEvicting ? <CircularProgress size={14} /> : <RefreshIcon />}
+                    onClick={() => evictCache()}
+                    disabled={isEvicting}
+                >
+                    Refresh Data
+                </Button>
+            </Box>
+
             <Grid container spacing={2}>
                 {cards.map((card) => (
                     <Grid key={card.label} size={{ xs: 12, sm: 6, md: 3 }}>

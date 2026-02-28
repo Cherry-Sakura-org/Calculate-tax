@@ -31,6 +31,16 @@ export const onlyButton: SxProps<Theme> = {
     },
 };
 
+export const deleteButton: SxProps<Theme> = {
+    ml: 0.5,
+    p: 0.25,
+    flexShrink: 0,
+    color: 'text.secondary',
+    '&:hover': {
+        color: 'error.main',
+    },
+};
+
 export const emptyText: SxProps<Theme> = {
     px: 2,
     py: 1.5,

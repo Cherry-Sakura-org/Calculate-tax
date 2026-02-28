@@ -72,6 +72,45 @@ export const useImportOrders = () => {
     });
 };
 
+export const useDeleteImportFile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ordersApi.deleteByImportFile,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: importFilesKeys.all });
+            toast.success('Import file deleted');
+        },
+        onError: () => toast.error('Failed to delete import file'),
+    });
+};
+
+export const useDeleteOrdersByIds = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (ids: string[]) => ordersApi.deleteByIds(ids),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: importFilesKeys.all });
+            toast.success('Orders deleted successfully');
+        },
+        onError: () => toast.error('Failed to delete orders'),
+    });
+};
+
+export const useDeleteOrdersByFilter = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (params: Omit<OrdersParams, 'page' | 'size' | 'sort'>) => ordersApi.deleteByFilter(params),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: importFilesKeys.all });
+            toast.success('All matching orders deleted successfully');
+        },
+        onError: () => toast.error('Failed to delete orders'),
+    });
+};
+
 export const useDownloadOrdersCsv = () =>
     useMutation({
         mutationFn: (params: Omit<OrdersParams, 'page' | 'size'> = {}) => ordersApi.downloadCsv(params),

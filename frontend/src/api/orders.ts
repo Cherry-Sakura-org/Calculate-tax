@@ -41,4 +41,16 @@ export const ordersApi = {
         const response = await apiClient.get<PaginatedResponse<ImportFileResponse>>('/orders/import-files', { params });
         return response.data;
     },
+
+    deleteByImportFile: async (importFileId: string): Promise<void> => {
+        await apiClient.delete(`/orders/by-import-file/${importFileId}`);
+    },
+
+    deleteByIds: async (ids: string[]): Promise<void> => {
+        await apiClient.delete('/orders/by-ids', { data: ids });
+    },
+
+    deleteByFilter: async (params: Omit<OrdersParams, 'page' | 'size' | 'sort'>): Promise<void> => {
+        await apiClient.delete('/orders/by-filter', { params });
+    },
 };

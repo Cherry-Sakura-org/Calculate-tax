@@ -12,4 +12,8 @@ export const dashboardApi = {
         const response = await apiClient.get<FeatureCollection>('/map/boundaries/counties');
         return response.data;
     },
+
+    evictCache: async (): Promise<void> => {
+        await apiClient.post('/dashboard/cache/evict');
+    },
 };

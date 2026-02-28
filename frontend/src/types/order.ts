@@ -45,8 +45,11 @@ export interface OrdersParams {
 
     // Location filters
     withinNewYork?: boolean;
-    county?: string;
-    region?: string;
+    counties?: string;
+    regions?: string;
+
+    // Manual orders filter
+    manualOnly?: boolean;
 
     // Import file filters
     importFileId?: string;

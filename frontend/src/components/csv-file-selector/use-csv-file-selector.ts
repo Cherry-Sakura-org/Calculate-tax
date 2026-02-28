@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useImportFiles } from '../../api/use-orders';
+import { useImportFiles, useDeleteImportFile } from '../../api/use-orders';
 import type { CsvFileEntry } from './types';
 
 export const useCsvFileSelector = () => {
     const { data: files = [], isLoading } = useImportFiles();
+    const deleteImportFile = useDeleteImportFile();
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [includeManual, setIncludeManual] = useState(true);
     const [initialized, setInitialized] = useState(false);
 
     // Select all files by default once data loads
@@ -39,16 +41,36 @@ export const useCsvFileSelector = () => {
         setSelectedIds(new Set([id]));
     }, []);
 
+    const deleteFile = useCallback((id: string) => {
+        deleteImportFile.mutate(id, {
+            onSuccess: () => {
+                setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(id);
+                    return next;
+                });
+            },
+        });
+    }, [deleteImportFile]);
+
+    const toggleIncludeManual = useCallback(() => {
+        setIncludeManual((prev) => !prev);
+    }, []);
+
     const selectedFiles = files.filter((f: CsvFileEntry) => selectedIds.has(f.id));
 
     return {
         files,
         selectedIds,
         selectedFiles,
+        includeManual,
         isLoading,
+        isDeleting: deleteImportFile.isPending,
         toggleFile,
         selectAll,
         deselectAll,
         selectOnly,
+        deleteFile,
+        toggleIncludeManual,
     };
 };

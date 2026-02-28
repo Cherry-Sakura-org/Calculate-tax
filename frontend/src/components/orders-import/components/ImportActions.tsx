@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Chip, Stack } from '@mui/material';
+import { Chip, Stack } from '@mui/material';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import * as styles from '../orders-import.styles';
 
@@ -11,13 +11,7 @@ interface ImportActionsProps {
     onReset: () => void;
 }
 
-export const ImportActions: React.FC<ImportActionsProps> = ({
-    selectedFiles,
-    isSuccess,
-    isError,
-    onRemoveFile,
-    onReset,
-}) => {
+export const ImportActions: React.FC<ImportActionsProps> = ({ selectedFiles, onRemoveFile }) => {
     if (!selectedFiles.length) return null;
 
     return (

@@ -13,8 +13,7 @@ export const useFileUpload = () => {
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
-        mutationFn: (files: File[]) =>
-            Promise.all(files.map((file) => ordersApi.import(file))),
+        mutationFn: (files: File[]) => Promise.all(files.map((file) => ordersApi.import(file))),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['orders'] });
             toast.success('Orders imported successfully');
@@ -31,6 +30,8 @@ export const useFileUpload = () => {
                     message = 'File is corrupted or has invalid format';
                 } else if (status === 422) {
                     message = 'File contains invalid or removed rows';
+                } else if (status === 500) {
+                    message = 'File is corrupted or has invalid format';
                 } else {
                     message = serverMessage || 'File import error';
                 }
@@ -39,7 +40,6 @@ export const useFileUpload = () => {
             }
 
             setFileError(message);
-            toast.error(message);
         },
     });
 
@@ -101,10 +101,22 @@ export const useFileUpload = () => {
         mutation.mutate(selectedFiles);
     }, [selectedFiles, mutation]);
 
-    const handleRemoveFile = useCallback((index: number) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    }, []);
-
+    const handleRemoveFile = useCallback(
+        (index: number) => {
+            setSelectedFiles((prev) => {
+                const updated = prev.filter((_, i) => i !== index);
+                if (updated.length === 0) {
+                    mutation.reset();
+                    setFileError(null);
+                    if (inputRef.current) inputRef.current.value = '';
+                }
+                return updated;
+            });
+            setFileError(null);
+            mutation.reset();
+        },
+        [mutation],
+    );
     const handleReset = useCallback(() => {
         mutation.reset();
         setSelectedFiles([]);

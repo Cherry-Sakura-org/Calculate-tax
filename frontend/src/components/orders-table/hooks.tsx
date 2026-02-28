@@ -206,15 +206,11 @@ const buildApiParams = (
             }
         }
 
-        if (fullRegions.length === 1 && partialCounties.length === 0) {
-            params.region = fullRegions[0];
-        } else if (partialCounties.length === 1 && fullRegions.length === 0) {
-            params.county = partialCounties[0];
-        } else if (fullRegions.length > 0 && partialCounties.length === 0) {
-            // Multiple full regions — send first region
-            params.region = fullRegions[0];
-        } else if (partialCounties.length > 0) {
-            params.county = partialCounties[0];
+        if (fullRegions.length > 0) {
+            params.regions = fullRegions.join(',');
+        }
+        if (partialCounties.length > 0) {
+            params.counties = partialCounties.join(',');
         }
     }
 
@@ -237,7 +233,7 @@ export interface SelectionState {
     someSelected: boolean;
 }
 
-export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default') => {
+export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default', includeManual = true) => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const [filters, setFilters] = useState<Record<string, RangeFilterValue>>({
@@ -262,8 +258,9 @@ export const useOrdersTableController = (importFileIds?: string, density: TableD
     const apiParams = useMemo(() => {
         const params = buildApiParams(filters, sortColumn, sortDirection, jurisdictionFilter);
         if (importFileIds) params.importFileIds = importFileIds;
+        if (includeManual) params.manualOnly = true;
         return params;
-    }, [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds]);
+    }, [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds, includeManual]);
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
         useInfiniteOrders(apiParams);

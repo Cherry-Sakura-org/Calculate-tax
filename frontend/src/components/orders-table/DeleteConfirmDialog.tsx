@@ -10,31 +10,34 @@ import {
 interface DeleteConfirmDialogProps {
     open: boolean;
     count: number;
+    allSelected?: boolean;
+    isDeleting?: boolean;
     onClose: () => void;
-    /** Called when the user confirms deletion. Connect to your backend API here. */
     onConfirm: () => void;
 }
 
 export default function DeleteConfirmDialog({
     open,
     count,
+    allSelected,
+    isDeleting,
     onClose,
     onConfirm,
 }: DeleteConfirmDialogProps) {
     return (
-        <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
+        <Dialog open={open} onClose={isDeleting ? undefined : onClose} maxWidth='xs' fullWidth>
             <DialogTitle>Delete orders</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Are you sure you want to delete {count}{' '}
-                    {count === 1 ? 'order' : 'orders'}? This action cannot be
-                    undone.
+                    {allSelected
+                        ? 'Are you sure you want to delete all orders? This action cannot be undone.'
+                        : `Are you sure you want to delete ${count} ${count === 1 ? 'order' : 'orders'}? This action cannot be undone.`}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={onConfirm} color='error' variant='contained'>
-                    Delete
+                <Button onClick={onClose} disabled={isDeleting}>Cancel</Button>
+                <Button onClick={onConfirm} color='error' variant='contained' disabled={isDeleting}>
+                    {isDeleting ? 'Deleting...' : 'Delete'}
                 </Button>
             </DialogActions>
         </Dialog>

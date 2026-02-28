@@ -26,7 +26,7 @@ import NewOrderButton from '../manual-order-create/NewOrderButton';
 import OrdersImportDialog from '../orders-import/OrdersImport';
 import { CsvFileSelector, useCsvFileSelector } from '../csv-file-selector';
 import { useDialog } from '../../hooks/use-dialog';
-import { useDownloadOrdersCsv } from '../../api/use-orders';
+import { useDeleteOrdersByFilter, useDeleteOrdersByIds, useDownloadOrdersCsv } from '../../api/use-orders';
 import { useOrdersTableController, type TableDensity } from './hooks';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import * as styles from './orders-table.styles';
@@ -58,21 +58,33 @@ const OrdersTable = () => {
         hasNextPage,
         apiParams,
         selection,
-    } = useOrdersTableController(debouncedImportFileIds, density);
+    } = useOrdersTableController(debouncedImportFileIds, density, csvSelector.includeManual);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
     const [showDeleteDialog, openDeleteDialog, closeDeleteDialog, mountDeleteDialog] = useDialog();
     const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
+    const { mutate: deleteByIds, isPending: isDeletingByIds } = useDeleteOrdersByIds();
+    const { mutate: deleteByFilter, isPending: isDeletingByFilter } = useDeleteOrdersByFilter();
+    const isDeleting = isDeletingByIds || isDeletingByFilter;
 
     const isSlim = density === 'slim';
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
     const handleDeleteConfirm = useCallback(() => {
-        // TODO: connect to backend delete API
-        // Example: deleteOrders([...selection.selectedIds]).then(() => { ... });
-        selection.clearSelection();
-        closeDeleteDialog();
-    }, [selection, closeDeleteDialog]);
+        const onSuccess = () => {
+            selection.clearSelection();
+            closeDeleteDialog();
+        };
+
+        if (selection.allSelected) {
+            // Delete all orders matching current filters
+            const { sort, ...filterParams } = apiParams;
+            deleteByFilter(filterParams, { onSuccess });
+        } else {
+            // Delete only selected orders
+            deleteByIds([...selection.selectedIds], { onSuccess });
+        }
+    }, [selection, closeDeleteDialog, apiParams, deleteByIds, deleteByFilter]);
 
     const colGroup = (
         <colgroup>
@@ -101,10 +113,14 @@ const OrdersTable = () => {
                         <CsvFileSelector
                             files={csvSelector.files}
                             selectedIds={csvSelector.selectedIds}
+                            includeManual={csvSelector.includeManual}
+                            isDeleting={csvSelector.isDeleting}
                             onToggle={csvSelector.toggleFile}
                             onSelectAll={csvSelector.selectAll}
                             onDeselectAll={csvSelector.deselectAll}
                             onSelectOnly={csvSelector.selectOnly}
+                            onDelete={csvSelector.deleteFile}
+                            onToggleIncludeManual={csvSelector.toggleIncludeManual}
                         />
                     </Stack>
                     <Stack direction='row' spacing={1.5} alignItems='center'>
@@ -354,6 +370,8 @@ const OrdersTable = () => {
                 <DeleteConfirmDialog
                     open={showDeleteDialog}
                     count={selection.selectedIds.size}
+                    allSelected={selection.allSelected}
+                    isDeleting={isDeleting}
                     onClose={closeDeleteDialog}
                     onConfirm={handleDeleteConfirm}
                 />
