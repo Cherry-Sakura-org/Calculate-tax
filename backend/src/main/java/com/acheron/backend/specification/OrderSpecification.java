@@ -95,25 +95,41 @@ public final class OrderSpecification {
         };
     }
 
-    public static Specification<Order> isManualOrder(Boolean manualOnly) {
-        return (root, query, cb) -> {
-            if (manualOnly == null) return null;
-            if (manualOnly) {
-                return cb.isNull(root.get("importFile"));
-            } else {
-                return cb.isNotNull(root.get("importFile"));
-            }
-        };
-    }
-
     public static Specification<Order> hasImportFileId(UUID importFileId) {
         return (root, query, cb) -> importFileId == null ? null : cb.equal(root.get("importFile").get("id"), importFileId);
     }
 
-    public static Specification<Order> hasImportFileIds(List<UUID> importFileIds) {
+    /**
+     * Combined source filter (importFileIds + manualOnly) with OR logic:
+     * - manualOnly=true  → only manual (importFile IS NULL), ignores importFileIds
+     * - manualOnly=false → only imported from selected files (or all imported if no files selected)
+     * - manualOnly=null  + importFileIds set → importFile IN (...) OR importFile IS NULL (both)
+     * - manualOnly=null  + no importFileIds  → no filter (all orders)
+     */
+    public static Specification<Order> hasSourceFilter(List<UUID> importFileIds, Boolean manualOnly) {
         return (root, query, cb) -> {
-            if (importFileIds == null || importFileIds.isEmpty()) return null;
-            return root.get("importFile").get("id").in(importFileIds);
+            boolean hasFiles = importFileIds != null && !importFileIds.isEmpty();
+
+            if (manualOnly != null) {
+                if (manualOnly) {
+                    return cb.isNull(root.get("importFile"));
+                } else {
+                    if (hasFiles) {
+                        return root.get("importFile").get("id").in(importFileIds);
+                    }
+                    return cb.isNotNull(root.get("importFile"));
+                }
+            }
+
+            // manualOnly not set — if files selected, show those files + manual
+            if (hasFiles) {
+                return cb.or(
+                        root.get("importFile").get("id").in(importFileIds),
+                        cb.isNull(root.get("importFile"))
+                );
+            }
+
+            return null; // no filter
         };
     }
 

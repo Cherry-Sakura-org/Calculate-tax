@@ -130,9 +130,8 @@ public class OrderApi {
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
-                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasImportFileIds(importFileIds));
+                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
 
         return ResponseEntity.ok(orderService.getAllOrdersForCurrentUser(spec, pageable, userId));
     }
@@ -192,9 +191,8 @@ public class OrderApi {
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
-                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasImportFileIds(importFileIds));
+                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
 
         List<Order> orders = orderService.getAllOrdersListForCurrentUser(spec, userId);
 
@@ -302,9 +300,8 @@ public class OrderApi {
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
-                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasImportFileIds(importFileIds));
+                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
 
         long deleted = orderService.deleteByFilter(spec, userId);
         return ResponseEntity.ok(java.util.Map.of(
