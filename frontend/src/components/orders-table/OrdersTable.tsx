@@ -74,10 +74,10 @@ const OrdersTable = () => {
                     justifyContent='space-between'
                     sx={styles.toolbar}
                 >
-                    <Typography variant='body2' color='text.secondary'>
-                        {isLoading ? 'Loading...' : `${totalRows} items`}
-                    </Typography>
-                    <Stack direction='row' spacing={1.5} alignItems='center'>
+                    <Stack direction='row' spacing={2} alignItems='center'>
+                        <Typography variant='body2' color='text.secondary'>
+                            {isLoading ? 'Loading...' : `${totalRows} items`}
+                        </Typography>
                         <CsvFileSelector
                             files={csvSelector.files}
                             selectedIds={csvSelector.selectedIds}
@@ -86,6 +86,8 @@ const OrdersTable = () => {
                             onDeselectAll={csvSelector.deselectAll}
                             onSelectOnly={csvSelector.selectOnly}
                         />
+                    </Stack>
+                    <Stack direction='row' spacing={1.5} alignItems='center'>
                         <Button
                             variant='outlined'
                             size='small'
@@ -107,6 +109,7 @@ const OrdersTable = () => {
                             {isDownloading ? 'Downloading...' : 'Download CSV'}
                         </Button>
                     </Stack>
+
                 </Stack>
 
                 {/* Fixed header */}
@@ -206,19 +209,25 @@ const OrdersTable = () => {
                                                 }
                                             >
                                                 {row.getVisibleCells().map((cell) => {
-                                                    const highlighted = (
-                                                        cell.column.columnDef.meta as {
-                                                            highlighted?: boolean;
-                                                        }
-                                                    )?.highlighted;
+                                                    const meta = cell.column.columnDef.meta as {
+                                                        highlighted?: boolean;
+                                                        align?: 'left' | 'right' | 'center';
+                                                        filterType?: string;
+                                                    } | undefined;
+                                                    const highlighted = meta?.highlighted;
+                                                    const isRightAligned = meta?.align === 'right';
+                                                    const hasFilter = !!meta?.filterType;
                                                     return (
                                                         <TableCell
                                                             key={cell.id}
-                                                            sx={
-                                                                highlighted && !isOutOfState
-                                                                    ? styles.highlightedCell
-                                                                    : undefined
-                                                            }
+                                                            sx={[
+                                                                highlighted && !isOutOfState && styles.highlightedCell,
+                                                                isRightAligned && {
+                                                                    textAlign: 'right',
+                                                                    // align value's right edge with label text (icon button ~20px + cell right padding 16px)
+                                                                    ...(hasFilter && { paddingRight: '36px' }),
+                                                                },
+                                                            ]}
                                                         >
                                                             {flexRender(
                                                                 cell.column.columnDef.cell,
