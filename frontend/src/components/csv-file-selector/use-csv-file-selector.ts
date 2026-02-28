@@ -35,6 +35,10 @@ export const useCsvFileSelector = () => {
         setSelectedIds(new Set());
     }, []);
 
+    const selectOnly = useCallback((id: string) => {
+        setSelectedIds(new Set([id]));
+    }, []);
+
     const selectedFiles = files.filter((f: CsvFileEntry) => selectedIds.has(f.id));
 
     return {
@@ -45,5 +49,6 @@ export const useCsvFileSelector = () => {
         toggleFile,
         selectAll,
         deselectAll,
+        selectOnly,
     };
 };
