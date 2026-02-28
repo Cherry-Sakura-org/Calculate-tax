@@ -105,3 +105,21 @@ export const percentIcon: SxProps<Theme> = {
     fontSize: 14,
     color: 'text.disabled',
 };
+
+export const selectField: SxProps<Theme> = {
+    height: 36,
+    fontSize: '0.8rem',
+    '& .MuiSelect-select': {
+        py: 0.75,
+    },
+};
+
+export const toggleGroup: SxProps<Theme> = {
+    height: 34,
+};
+
+export const toggleButton: SxProps<Theme> = {
+    fontSize: '0.7rem',
+    px: 1.5,
+    textTransform: 'none',
+};

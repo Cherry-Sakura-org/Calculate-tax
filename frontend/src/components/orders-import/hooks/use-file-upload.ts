@@ -12,8 +12,7 @@ export const useFileUpload = () => {
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
-        mutationFn: (files: File[]) =>
-            Promise.all(files.map((file) => ordersApi.import(file))),
+        mutationFn: (files: File[]) => ordersApi.import(files),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['orders'] });
         },

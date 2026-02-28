@@ -2,15 +2,22 @@ import { Box, Chip, Stack, Tooltip, Typography } from '@mui/material';
 import {
     createColumnHelper,
     getCoreRowModel,
+    getSortedRowModel,
     useReactTable,
+    type SortingState,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateTime } from 'luxon';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useInfiniteOrders } from '../../api/use-orders';
+import { useInfiniteOrders, useImportFiles } from '../../api/use-orders';
 import { useCurrentUser } from '../../hooks/auth';
-import type { Order } from '../../types/order';
+import type { Order, OrdersParams } from '../../types/order';
+import {
+    type TableFilterValues,
+    INITIAL_FILTERS,
+    filtersToParams,
+} from './TableFilters';
 import * as styles from './table-hooks.styles';
 
 const columnHelper = createColumnHelper<Order>();
@@ -62,6 +69,7 @@ const columns = [
     columnHelper.accessor('id', {
         header: 'ID',
         meta: { width: 110 },
+        enableSorting: false,
         cell: (info) => {
             const id = info.getValue();
             return (
@@ -84,15 +92,18 @@ const columns = [
     columnHelper.accessor('latitude', {
         header: 'Latitude',
         meta: { width: 120 },
+        enableSorting: false,
         cell: (info) => <MutedCell>{info.getValue().toFixed(6)}</MutedCell>,
     }),
     columnHelper.accessor('longitude', {
         header: 'Longitude',
         meta: { width: 130 },
+        enableSorting: false,
         cell: (info) => <MutedCell>{info.getValue().toFixed(6)}</MutedCell>,
     }),
     columnHelper.accessor('jurisdictions', {
         header: 'Jurisdictions',
+        enableSorting: false,
         cell: (info) => {
             const values = info.getValue();
             if (!values?.length) return null;
@@ -111,8 +122,9 @@ const columns = [
         },
     }),
     columnHelper.accessor('timestamp', {
+        id: 'orderedAt',
         header: 'Created',
-        meta: { width: 200 },
+        meta: { width: 200, sortField: 'orderedAt' },
         cell: (info) => (
             <MutedCell>
                 {DateTime.fromISO(info.getValue()).toLocaleString(DateTime.DATETIME_SHORT)}
@@ -120,8 +132,9 @@ const columns = [
         ),
     }),
     columnHelper.accessor('composite_tax_rate', {
+        id: 'compositeTaxRate',
         header: 'Tax Rate',
-        meta: { highlighted: true, width: 100 },
+        meta: { highlighted: true, width: 100, sortField: 'compositeTaxRate' },
         cell: (info) => (
             <Tooltip
                 title={<TaxRateBreakdown order={info.row.original} />}
@@ -140,27 +153,57 @@ const columns = [
     }),
     columnHelper.accessor('subtotal', {
         header: 'Subtotal',
-        meta: { highlighted: true, width: 100 },
+        meta: { highlighted: true, width: 100, sortField: 'subtotal' },
         cell: (info) => <ValueCell>${info.getValue().toFixed(2)}</ValueCell>,
     }),
     columnHelper.accessor('tax_amount', {
+        id: 'taxAmount',
         header: 'Tax',
-        meta: { highlighted: true, width: 80 },
+        meta: { highlighted: true, width: 80, sortField: 'taxAmount' },
         cell: (info) => <ValueCell>${info.getValue().toFixed(2)}</ValueCell>,
     }),
     columnHelper.accessor('total_amount', {
+        id: 'totalAmount',
         header: 'Total',
-        meta: { highlighted: true, width: 90 },
+        meta: { highlighted: true, width: 90, sortField: 'totalAmount' },
         cell: (info) => <HighlightCell>${info.getValue().toFixed(2)}</HighlightCell>,
     }),
 ];
 
 const ROW_HEIGHT_ESTIMATE = 49;
 
+const sortingStateToParams = (sorting: SortingState): string[] => {
+    return sorting.map((s) => {
+        const col = columns.find((c) => c.accessorKey === s.id || ('id' in (c as any) && (c as any).id === s.id));
+        const sortField = (col?.meta as { sortField?: string })?.sortField || s.id;
+        return `${sortField},${s.desc ? 'desc' : 'asc'}`;
+    });
+};
+
 export const useOrdersTableController = () => {
     const { data: currentUser, isLoading: isAuthLoading } = useCurrentUser();
     const isAuthenticated = !!currentUser;
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders({}, isAuthenticated);
+
+    const [filters, setFilters] = useState<TableFilterValues>(INITIAL_FILTERS);
+    const [sorting, setSorting] = useState<SortingState>([]);
+
+    const filterParams = useMemo(() => filtersToParams(filters), [filters]);
+    const sortParams = useMemo(() => sortingStateToParams(sorting), [sorting]);
+
+    const queryParams: Omit<OrdersParams, 'page' | 'size'> = useMemo(
+        () => ({
+            ...filterParams,
+            ...(sortParams.length > 0 ? { sort: sortParams } : {}),
+        }),
+        [filterParams, sortParams],
+    );
+
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders(
+        queryParams,
+        isAuthenticated,
+    );
+
+    const { data: importFiles } = useImportFiles();
 
     const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
     const totalRows = data?.pages[0]?.total ?? 0;
@@ -168,7 +211,11 @@ export const useOrdersTableController = () => {
     const table = useReactTable({
         data: items,
         columns,
+        state: { sorting },
+        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        manualSorting: true,
     });
 
     const { rows } = table.getRowModel();
@@ -194,6 +241,10 @@ export const useOrdersTableController = () => {
         }
     }, [virtualItems, rows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+    const handleFiltersChange = useCallback((newFilters: TableFilterValues) => {
+        setFilters(newFilters);
+    }, []);
+
     return {
         table,
         rows,
@@ -204,5 +255,9 @@ export const useOrdersTableController = () => {
         rowVirtualizer,
         isFetchingNextPage,
         hasNextPage,
+        filters,
+        onFiltersChange: handleFiltersChange,
+        filterParams: queryParams,
+        importFiles: importFiles ?? [],
     };
 };

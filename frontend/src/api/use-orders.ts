@@ -7,6 +7,7 @@ export const ordersKeys = {
     all: ['orders'] as const,
     lists: () => [...ordersKeys.all, 'list'] as const,
     list: (params: OrdersParams) => [...ordersKeys.lists(), params] as const,
+    importFiles: () => [...ordersKeys.all, 'import-files'] as const,
 };
 
 export const useOrders = (params: OrdersParams = {}) =>
@@ -53,5 +54,24 @@ export const useImportOrders = () => {
         mutationFn: ordersApi.import,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ordersKeys.lists() }),
         onError: () => toast.error('Failed to import orders'),
+    });
+};
+
+export const useImportFiles = () =>
+    useQuery({
+        queryKey: ordersKeys.importFiles(),
+        queryFn: ordersApi.listImportFiles,
+    });
+
+export const useDeleteOrdersByFilter = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ordersApi.deleteByFilter,
+        onSuccess: (count) => {
+            queryClient.invalidateQueries({ queryKey: ordersKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: ordersKeys.importFiles() });
+            toast.success(`${count} orders deleted`);
+        },
+        onError: () => toast.error('Failed to delete orders'),
     });
 };
