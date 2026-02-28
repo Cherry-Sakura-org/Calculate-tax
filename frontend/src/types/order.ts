@@ -38,8 +38,9 @@ export interface OrdersParams {
     minTaxRate?: number;
     maxTaxRate?: number;
     withinNewYork?: boolean;
-    county?: string;
-    region?: string;
+    manualOnly?: boolean;
+    counties?: string;
+    regions?: string;
     importFileId?: string;
     importFileIds?: string[];
 }

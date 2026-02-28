@@ -46,6 +46,7 @@ export interface TableFilterValues {
     county: string;
     region: string;
     withinNewYork: 'all' | 'true' | 'false';
+    manualOnly: 'all' | 'true' | 'false';
     importFileIds: string[];
 }
 
@@ -65,6 +66,7 @@ export const INITIAL_FILTERS: TableFilterValues = {
     county: '',
     region: '',
     withinNewYork: 'all',
+    manualOnly: 'all',
     importFileIds: [],
 };
 
@@ -92,9 +94,10 @@ export const filtersToParams = (filters: TableFilterValues): Omit<OrdersParams, 
     if (filters.maxSubtotal) params.maxSubtotal = Number(filters.maxSubtotal);
     if (filters.minTotal) params.minTotal = Number(filters.minTotal);
     if (filters.maxTotal) params.maxTotal = Number(filters.maxTotal);
-    if (filters.county) params.county = filters.county;
-    if (filters.region) params.region = filters.region;
+    if (filters.county) params.counties = filters.county;
+    if (filters.region) params.regions = filters.region;
     if (filters.withinNewYork !== 'all') params.withinNewYork = filters.withinNewYork === 'true';
+    if (filters.manualOnly !== 'all') params.manualOnly = filters.manualOnly === 'true';
     if (filters.importFileIds.length > 0) params.importFileIds = filters.importFileIds;
 
     return params;
@@ -117,6 +120,7 @@ export const hasActiveFilters = (filters: TableFilterValues): boolean => {
         filters.county !== '' ||
         filters.region !== '' ||
         filters.withinNewYork !== 'all' ||
+        filters.manualOnly !== 'all' ||
         filters.importFileIds.length > 0
     );
 };
@@ -171,6 +175,7 @@ const TableFilters = ({ filters, onChange, importFiles = [] }: TableFiltersProps
     const hasRegionFilter = filters.region;
     const hasCountyFilter = filters.county;
     const hasNyFilter = filters.withinNewYork !== 'all';
+    const hasSourceFilter = filters.manualOnly !== 'all';
     const hasImportFilter = filters.importFileIds.length > 0;
     const hasAnyFilter = hasActiveFilters(filters);
 
@@ -182,6 +187,7 @@ const TableFilters = ({ filters, onChange, importFiles = [] }: TableFiltersProps
         hasRegionFilter,
         hasCountyFilter,
         hasNyFilter,
+        hasSourceFilter,
         hasImportFilter,
     ].filter(Boolean).length;
 
@@ -362,6 +368,25 @@ const TableFilters = ({ filters, onChange, importFiles = [] }: TableFiltersProps
                         </ToggleButton>
                         <ToggleButton value='false' sx={styles.toggleButton}>
                             Non-NY
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+
+                    {/* Order Source Toggle */}
+                    <ToggleButtonGroup
+                        value={filters.manualOnly}
+                        exclusive
+                        onChange={(_, val) => val && updateFilter('manualOnly', val)}
+                        size='small'
+                        sx={styles.toggleGroup}
+                    >
+                        <ToggleButton value='all' sx={styles.toggleButton}>
+                            All
+                        </ToggleButton>
+                        <ToggleButton value='true' sx={styles.toggleButton}>
+                            Manual
+                        </ToggleButton>
+                        <ToggleButton value='false' sx={styles.toggleButton}>
+                            Imported
                         </ToggleButton>
                     </ToggleButtonGroup>
 

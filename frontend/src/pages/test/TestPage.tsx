@@ -256,9 +256,9 @@ const OrdersSection = () => {
     const [county, setCounty] = useState('');
 
     const params: Record<string, string | number | boolean> = { page, size, sort };
-    if (region) params.region = region;
+    if (region) params.regions = region;
     if (withinNY) params.withinNewYork = withinNY;
-    if (county.trim()) params.county = county.trim();
+    if (county.trim()) params.counties = county.trim();
 
     const { data, isLoading, error, refetch, isFetching } = useQuery<{ content: OrderRow[]; page: PageMeta }>({
         queryKey: ['test-orders', page, size, sort, region, withinNY, county],

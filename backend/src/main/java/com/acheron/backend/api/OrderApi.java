@@ -111,7 +111,7 @@ public class OrderApi {
             @Parameter(description = "Filter by NY validity: true = within NY, false = outside NY", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "Filter by county names (comma-separated, case-insensitive)") @RequestParam(required = false) List<String> counties,
             @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
-            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
+            @Parameter(description = "Order source: true = manual only, false = imported only, omit = all", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
@@ -173,7 +173,7 @@ public class OrderApi {
             @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "Filter by county names (comma-separated)") @RequestParam(required = false) List<String> counties,
             @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
-            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
+            @Parameter(description = "Order source: true = manual only, false = imported only, omit = all", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId,
@@ -285,7 +285,7 @@ public class OrderApi {
             @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "Filter by county names (comma-separated)") @RequestParam(required = false) List<String> counties,
             @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
-            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
+            @Parameter(description = "Order source: true = manual only, false = imported only, omit = all", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
