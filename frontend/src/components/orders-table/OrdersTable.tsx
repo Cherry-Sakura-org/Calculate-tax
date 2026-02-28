@@ -17,6 +17,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import NewOrderButton from '../manual-order-create/NewOrderButton';
 import OrdersImportDialog from '../orders-import/OrdersImport';
+import { CsvFileSelector, useCsvFileSelector } from '../csv-file-selector';
 import { useDialog } from '../../hooks/use-dialog';
 import { useDownloadOrdersCsv } from '../../api/use-orders';
 import { useOrdersTableController } from './hooks';
@@ -36,6 +37,7 @@ const OrdersTable = () => {
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
     const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
+    const csvSelector = useCsvFileSelector();
 
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
@@ -56,7 +58,14 @@ const OrdersTable = () => {
                 <Typography variant='body2' color='text.secondary'>
                     {isLoading ? 'Loading...' : `${totalRows} items`}
                 </Typography>
-                <Stack direction='row' spacing={1.5}>
+                <Stack direction='row' spacing={1.5} alignItems='center'>
+                    <CsvFileSelector
+                        files={csvSelector.files}
+                        selectedIds={csvSelector.selectedIds}
+                        onToggle={csvSelector.toggleFile}
+                        onSelectAll={csvSelector.selectAll}
+                        onDeselectAll={csvSelector.deselectAll}
+                    />
                     <Button
                         variant='outlined'
                         size='small'
