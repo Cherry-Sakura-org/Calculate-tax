@@ -50,6 +50,7 @@ public class NativeImportService {
     private static final int SAVE_BATCH_SIZE = 500;
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS]");
+    private static final List<String> EXPECTED_HEADERS = List.of("id", "longitude", "latitude", "timestamp", "subtotal");
 
     public record ImportResult(
             UUID importFileId,
@@ -211,6 +212,20 @@ public class NativeImportService {
                 throw new IllegalArgumentException("CSV file is empty");
             }
             log.info("CSV Header: {}", header);
+
+            String[] headerColumns = header.split(",", -1);
+            if (headerColumns.length < EXPECTED_HEADERS.size()) {
+                throw new IllegalArgumentException(
+                        "Invalid CSV header: expected " + EXPECTED_HEADERS.size() + " columns ("
+                                + String.join(", ", EXPECTED_HEADERS) + "), got " + headerColumns.length);
+            }
+            for (int i = 0; i < EXPECTED_HEADERS.size(); i++) {
+                if (!EXPECTED_HEADERS.get(i).equalsIgnoreCase(headerColumns[i].trim())) {
+                    throw new IllegalArgumentException(
+                            "Invalid CSV header at column " + (i + 1) + ": expected '"
+                                    + EXPECTED_HEADERS.get(i) + "', got '" + headerColumns[i].trim() + "'");
+                }
+            }
 
             int lineNum = 1;
             String line;

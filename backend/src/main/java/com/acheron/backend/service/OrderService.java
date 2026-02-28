@@ -21,11 +21,15 @@ import com.acheron.backend.repository.ImportFileRepository;
 import com.acheron.backend.specification.OrderSpecification;
 import jakarta.persistence.EntityManager;
 
+import com.acheron.backend.entity.ImportFile;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -149,6 +153,7 @@ public class OrderService {
 
         List<Order> orders = orderRepository.findAll(spec);
         orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
         dashboardService.evictAllCaches();
         log.info("Soft-deleted {} orders for importFileId={}", orders.size(), importFileId);
         return orders.size();
@@ -169,9 +174,47 @@ public class OrderService {
 
         List<Order> orders = orderRepository.findAll(finalSpec);
         orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
         dashboardService.evictAllCaches();
         log.info("Soft-deleted {} orders by filter", orders.size());
         return orders.size();
+    }
+
+    @Transactional
+    public long deleteByIds(List<UUID> ids) {
+        User currentUser = userService.getCurrentUser();
+        List<Order> orders = orderRepository.findAllById(ids);
+
+        if (currentUser.getRole() != Role.SUPER_ADMIN) {
+            orders = orders.stream()
+                    .filter(o -> o.getCreatedByAdmin().getId().equals(currentUser.getId()))
+                    .toList();
+        }
+
+        orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders by IDs", orders.size());
+        return orders.size();
+    }
+
+    private void cleanupOrphanedImportFiles(List<Order> deletedOrders) {
+        Set<UUID> importFileIds = deletedOrders.stream()
+                .filter(o -> o.getImportFile() != null)
+                .map(o -> o.getImportFile().getId())
+                .collect(Collectors.toSet());
+
+        if (importFileIds.isEmpty()) return;
+
+        entityManager.flush();
+
+        for (UUID importFileId : importFileIds) {
+            long remaining = orderRepository.countByImportFileId(importFileId);
+            if (remaining == 0) {
+                importFileRepository.deleteById(importFileId);
+                log.info("Deleted orphaned import file: {}", importFileId);
+            }
+        }
     }
 
     private User getCurrentUser() {

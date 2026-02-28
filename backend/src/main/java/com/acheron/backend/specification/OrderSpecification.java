@@ -65,12 +65,34 @@ public final class OrderSpecification {
         return (root, query, cb) -> maxTotal == null ? null : cb.lessThanOrEqualTo(root.get("totalAmount"), maxTotal);
     }
 
-    public static Specification<Order> hasCounty(String county) {
-        return (root, query, cb) -> county == null ? null : cb.like(cb.lower(root.get("county")), "%" + county.toLowerCase() + "%");
-    }
+    public static Specification<Order> hasCountiesOrRegions(List<String> counties, List<String> regions) {
+        return (root, query, cb) -> {
+            boolean hasCounties = counties != null && !counties.isEmpty();
+            boolean hasRegions = regions != null && !regions.isEmpty();
 
-    public static Specification<Order> hasRegion(String region) {
-        return (root, query, cb) -> region == null ? null : cb.equal(cb.lower(root.get("region")), region.toLowerCase());
+            if (!hasCounties && !hasRegions) return null;
+
+            if (hasCounties && !hasRegions) {
+                return cb.lower(root.get("county")).in(
+                        counties.stream().map(String::toLowerCase).toList()
+                );
+            }
+
+            if (!hasCounties) {
+                return cb.lower(root.get("region")).in(
+                        regions.stream().map(String::toLowerCase).toList()
+                );
+            }
+
+            return cb.or(
+                    cb.lower(root.get("county")).in(
+                            counties.stream().map(String::toLowerCase).toList()
+                    ),
+                    cb.lower(root.get("region")).in(
+                            regions.stream().map(String::toLowerCase).toList()
+                    )
+            );
+        };
     }
 
     public static Specification<Order> hasImportFileId(UUID importFileId) {

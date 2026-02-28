@@ -60,8 +60,12 @@ tags:
 - name: Batch Import
   description: IGNORE!!! USE NATIVE IMPORT!!! Async CSV import with real-time progress
     tracking via SSE
+- name: Users
+  description: User management (SUPER_ADMIN only)
 - name: Orders
   description: "CRUD, filtering, CSV import/export, and import file tracking for orders"
+- name: Auth
+  description: Authentication endpoints
 - name: Orders
   description: Order management API with native GeoJSON tax calculation
 - name: Dashboard
@@ -195,15 +199,17 @@ paths:
 
         - `withinNewYork` — `true` = valid NY orders only, `false` = out-of-state only
 
-        - `county` — filter by county name (case-insensitive, e.g. `Suffolk`)
+        - `counties` — filter by county names (comma-separated, case-insensitive, e.g. `Suffolk,Nassau`)
 
-        - `region` — filter by region: `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
+        - `regions` — filter by regions (comma-separated): `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
+
+        - `manualOnly` — `true` = only manually created orders (no import file), `false` = only imported orders
 
         - `importFileId` — filter by import file UUID
 
         - `importFileIds` — filter by multiple import file UUIDs (comma-separated)
 
-        **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&county=Suffolk`
+        **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&counties=Suffolk,Nassau&manualOnly=true`
       operationId: getAllOrders
       parameters:
       - name: pageable
@@ -292,19 +298,28 @@ paths:
         required: false
         schema:
           type: boolean
-      - name: county
+      - name: counties
         in: query
-        description: Filter by county name (case-insensitive)
+        description: "Filter by county names (comma-separated, case-insensitive)"
         required: false
         schema:
-          type: string
-      - name: region
+          type: array
+          items:
+            type: string
+      - name: regions
         in: query
-        description: "Filter by region: NYC, Long Island, Hudson Valley, Capital District,\
-          \ Upstate, Out of State"
+        description: Filter by regions (comma-separated)
         required: false
         schema:
-          type: string
+          type: array
+          items:
+            type: string
+      - name: manualOnly
+        in: query
+        description: "Filter: true = manual orders only, false = imported only"
+        required: false
+        schema:
+          type: boolean
       - name: importFileId
         in: query
         description: Filter by import file UUID
@@ -321,6 +336,13 @@ paths:
           items:
             type: string
             format: uuid
+      - name: userId
+        in: query
+        description: Filter by user UUID (SUPER_ADMIN only)
+        required: false
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Orders retrieved successfully
@@ -453,6 +475,44 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
   /api/v1/orders/import:
     post:
       tags:
@@ -488,6 +548,25 @@ paths:
                   status: QUEUED
         "400":
           description: Invalid file or upload failed
+  /users:
+    get:
+      tags:
+      - Users
+      summary: Get all users (SUPER_ADMIN only)
+      operationId: getAllUsers
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModelUserResponse"
   /tax-localities/{locality}:
     get:
       tags:
@@ -551,9 +630,11 @@ paths:
     get:
       tags:
       - Orders
-      summary: List all import files (paginated)
+      summary: "List import files (paginated, user-scoped)"
       description: |-
-        Returns a paginated list of all imported CSV files, sorted by import date descending.
+        Returns a paginated list of imported CSV files, sorted by import date descending.
+        Regular admins see only their own files. SUPER_ADMIN sees all files by default,
+        or can filter by userId.
         Each entry includes file metadata, record counts (total, success, failed, out-of-NY), and processing stats.
       operationId: listImportFiles
       parameters:
@@ -563,6 +644,13 @@ paths:
         required: true
         schema:
           $ref: "#/components/schemas/Pageable"
+      - name: userId
+        in: query
+        description: Filter by user UUID (SUPER_ADMIN only)
+        required: false
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: Import files retrieved
@@ -667,18 +755,28 @@ paths:
         required: false
         schema:
           type: boolean
-      - name: county
+      - name: counties
         in: query
-        description: County name
+        description: Filter by county names (comma-separated)
         required: false
         schema:
-          type: string
-      - name: region
+          type: array
+          items:
+            type: string
+      - name: regions
         in: query
-        description: Region
+        description: Filter by regions (comma-separated)
         required: false
         schema:
-          type: string
+          type: array
+          items:
+            type: string
+      - name: manualOnly
+        in: query
+        description: "Filter: true = manual orders only, false = imported only"
+        required: false
+        schema:
+          type: boolean
       - name: importFileId
         in: query
         description: Import file UUID
@@ -695,6 +793,13 @@ paths:
           items:
             type: string
             format: uuid
+      - name: userId
+        in: query
+        description: Filter by user UUID (SUPER_ADMIN only)
+        required: false
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: CSV file streamed
@@ -908,6 +1013,19 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/DashboardResponse"
+  /auth/me:
+    get:
+      tags:
+      - Auth
+      summary: Get current authenticated user
+      operationId: me
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
   /api/v1/orders/import/{jobId}:
     get:
       tags:
@@ -1042,6 +1160,268 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PagedModel"
+  /orders/by-import-file/{importFileId}:
+    delete:
+      tags:
+      - Orders
+      summary: Delete orders by import file
+      description: Soft-deletes all orders from a specific import file.
+      operationId: deleteByImportFile
+      parameters:
+      - name: importFileId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Orders deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders/by-ids:
+    delete:
+      tags:
+      - Orders
+      summary: Delete orders by IDs
+      description: Soft-deletes orders by a list of order UUIDs. Non-SUPER_ADMIN users
+        can only delete their own orders.
+      operationId: deleteByIds
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+        required: true
+      responses:
+        "200":
+          description: Orders deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "400":
+          description: Empty ID list
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders/by-filter:
+    delete:
+      tags:
+      - Orders
+      summary: Delete orders by filter
+      description: |-
+        Soft-deletes all orders matching the provided filters.
+        Supports **all the same filters** as `GET /orders`.
+        Returns the count of deleted orders.
+      operationId: deleteByFilter
+      parameters:
+      - name: minLat
+        in: query
+        description: Min latitude
+        required: false
+        schema:
+          type: number
+      - name: maxLat
+        in: query
+        description: Max latitude
+        required: false
+        schema:
+          type: number
+      - name: minLon
+        in: query
+        description: Min longitude
+        required: false
+        schema:
+          type: number
+      - name: maxLon
+        in: query
+        description: Max longitude
+        required: false
+        schema:
+          type: number
+      - name: minSubtotal
+        in: query
+        description: Min subtotal
+        required: false
+        schema:
+          type: number
+      - name: maxSubtotal
+        in: query
+        description: Max subtotal
+        required: false
+        schema:
+          type: number
+      - name: minTotal
+        in: query
+        description: Min total
+        required: false
+        schema:
+          type: number
+      - name: maxTotal
+        in: query
+        description: Max total
+        required: false
+        schema:
+          type: number
+      - name: minTaxRate
+        in: query
+        description: Min tax rate
+        required: false
+        schema:
+          type: number
+      - name: maxTaxRate
+        in: query
+        description: Max tax rate
+        required: false
+        schema:
+          type: number
+      - name: from
+        in: query
+        description: From date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        description: To date (ISO 8601)
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: withinNewYork
+        in: query
+        description: Within New York
+        required: false
+        schema:
+          type: boolean
+      - name: counties
+        in: query
+        description: Filter by county names (comma-separated)
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: regions
+        in: query
+        description: Filter by regions (comma-separated)
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: manualOnly
+        in: query
+        description: "Filter: true = manual orders only, false = imported only"
+        required: false
+        schema:
+          type: boolean
+      - name: importFileId
+        in: query
+        description: Import file UUID
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: importFileIds
+        in: query
+        description: Filter by multiple import file UUIDs
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            format: uuid
+      - name: userId
+        in: query
+        description: Filter by user UUID (SUPER_ADMIN only)
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Orders deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "400":
+          description: No filters provided
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders/by-csv:
+    delete:
+      tags:
+      - Orders
+      summary: Delete orders by CSV file
+      description: Soft-deletes orders by uploading a CSV file with an `id` column
+        containing order UUIDs.
+      operationId: deleteByCsv
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: Orders deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "400":
+          description: Invalid CSV format
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+  /orders/all:
+    delete:
+      tags:
+      - Orders
+      summary: "⚠️ TEST: Delete ALL orders"
+      description: "Hard-deletes ALL orders, tax breakdowns, and import files. This\
+        \ is a destructive test-only endpoint."
+      operationId: deleteAllOrders
+      responses:
+        "200":
+          description: All orders deleted
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+        "500":
+          description: Error during deletion
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
 components:
   schemas:
     TaxLocality:
@@ -1201,6 +1581,63 @@ components:
           type: number
         subtotal:
           type: number
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          maxLength: 100
+          minLength: 4
+      required:
+      - email
+      - password
+      - username
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserResponse"
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - SUPER_ADMIN
+        oauthProvider:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          maxLength: 100
+          minLength: 4
+      required:
+      - email
+      - password
     Pageable:
       type: object
       properties:
@@ -1231,6 +1668,15 @@ components:
         totalPages:
           type: integer
           format: int64
+    PagedModelUserResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserResponse"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
     PagedModelTaxLocality:
       type: object
       properties:

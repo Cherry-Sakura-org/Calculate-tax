@@ -1,8 +1,11 @@
 package com.acheron.backend.api;
 
 import com.acheron.backend.dto.response.ImportFileResponse;
+import com.acheron.backend.entity.Role;
+import com.acheron.backend.entity.User;
 import com.acheron.backend.repository.ImportFileRepository;
 import com.acheron.backend.service.NativeImportService;
+import com.acheron.backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Tag(name = "Orders", description = "Order management API with native GeoJSON tax calculation")
 @RestController
@@ -30,6 +34,10 @@ public class NativeApi {
 
     private final NativeImportService nativeImportService;
     private final ImportFileRepository importFileRepository;
+    private final UserService userService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.import.max-file-size-bytes:524288000}")
+    private long maxFileSizeBytes;
 
     @Operation(
             summary = "Import orders from one or more CSV files",
@@ -72,6 +80,10 @@ public class NativeApi {
             if (filename == null || !filename.toLowerCase().endsWith(".csv")) {
                 throw new IllegalArgumentException("File must be a CSV file: " + filename);
             }
+            if (file.getSize() > maxFileSizeBytes) {
+                throw new IllegalArgumentException(
+                        "File '" + filename + "' exceeds maximum size of " + (maxFileSizeBytes / 1024 / 1024) + "MB");
+            }
             results.add(nativeImportService.importCsv(file));
         }
 
@@ -79,20 +91,36 @@ public class NativeApi {
     }
 
     @Operation(
-            summary = "List all import files (paginated)",
+            summary = "List import files (paginated, user-scoped)",
             description = """
-                    Returns a paginated list of all imported CSV files, sorted by import date descending.
+                    Returns a paginated list of imported CSV files, sorted by import date descending.
+                    Regular admins see only their own files. SUPER_ADMIN sees all files by default,
+                    or can filter by userId.
                     Each entry includes file metadata, record counts (total, success, failed, out-of-NY), and processing stats."""
     )
     @ApiResponses(@ApiResponse(responseCode = "200", description = "Import files retrieved"))
     @GetMapping("/import-files")
     public ResponseEntity<Page<ImportFileResponse>> listImportFiles(
             @Parameter(description = "Pagination (page, size, sort)")
-            @PageableDefault(size = 20, sort = "importedAt") Pageable pageable
+            @PageableDefault(size = 20, sort = "importedAt") Pageable pageable,
+            @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
     ) {
-        return ResponseEntity.ok(
-                importFileRepository.findAllByOrderByImportedAtDesc(pageable)
-                        .map(ImportFileResponse::fromEntity)
-        );
+        User currentUser = userService.getCurrentUser();
+
+        Page<ImportFileResponse> page;
+        if (currentUser.getRole() == Role.SUPER_ADMIN) {
+            if (userId != null) {
+                page = importFileRepository.findAllByImportedByUserIdOrderByImportedAtDesc(userId, pageable)
+                        .map(ImportFileResponse::fromEntity);
+            } else {
+                page = importFileRepository.findAllByOrderByImportedAtDesc(pageable)
+                        .map(ImportFileResponse::fromEntity);
+            }
+        } else {
+            page = importFileRepository.findAllByImportedByUserIdOrderByImportedAtDesc(currentUser.getId(), pageable)
+                    .map(ImportFileResponse::fromEntity);
+        }
+
+        return ResponseEntity.ok(page);
     }
 }
