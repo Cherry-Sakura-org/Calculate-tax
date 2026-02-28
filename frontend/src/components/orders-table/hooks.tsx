@@ -289,7 +289,7 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         <Tooltip title='Copy ID' arrow placement='top'>
                             <Chip
                                 label={id?.slice(0, 8) ?? '—'}
-                                color='primary'
+                                variant='outlined'
                                 size='small'
                                 onClick={(e) => {
                                     e.stopPropagation();

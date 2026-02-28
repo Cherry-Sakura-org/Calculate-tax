@@ -221,14 +221,13 @@ const OrdersTable = () => {
                                                     return (
                                                         <TableCell
                                                             key={cell.id}
-                                                            sx={[
-                                                                highlighted && !isOutOfState && styles.highlightedCell,
-                                                                isRightAligned && {
+                                                            sx={{
+                                                                ...(highlighted && !isOutOfState ? styles.highlightedCell as object : {}),
+                                                                ...(isRightAligned && {
                                                                     textAlign: 'right',
-                                                                    // align value's right edge with label text (icon button ~20px + cell right padding 16px)
                                                                     ...(hasFilter && { paddingRight: '36px' }),
-                                                                },
-                                                            ]}
+                                                                }),
+                                                            }}
                                                         >
                                                             {flexRender(
                                                                 cell.column.columnDef.cell,

@@ -43,8 +43,10 @@ export const breakdownValue: SxProps<Theme> = {
 export const idChip: SxProps<Theme> = {
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '0.75rem',
-    height: 24,
+    fontSize: '0.7rem',
+    height: 22,
+    color: 'text.secondary',
+    borderColor: 'divider',
 };
 
 export const jurisdictionChip: SxProps<Theme> = {
