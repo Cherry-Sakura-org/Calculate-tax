@@ -3,7 +3,6 @@ import { alpha } from '@mui/material';
 
 export const filterIconButton: SxProps<Theme> = {
     p: 0.25,
-    ml: 0.5,
     color: 'text.secondary',
     opacity: 0.5,
     transition: 'all 0.15s ease',
@@ -111,6 +110,7 @@ export const headerCellContent: SxProps<Theme> = {
     alignItems: 'center',
     whiteSpace: 'nowrap',
     position: 'relative',
+    gap: 0.5,
 };
 
 export const sortArrow: SxProps<Theme> = {
@@ -118,6 +118,12 @@ export const sortArrow: SxProps<Theme> = {
     left: -14,
     top: '50%',
     transform: 'translateY(-50%)',
+    fontSize: '0.875rem',
+    color: 'primary.main',
+    transition: 'transform 0.15s ease, opacity 0.15s ease',
+};
+
+export const sortArrowInline: SxProps<Theme> = {
     fontSize: '0.875rem',
     color: 'primary.main',
     transition: 'transform 0.15s ease, opacity 0.15s ease',

@@ -64,7 +64,7 @@ const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
                 <Button onClick={onClose} variant='text'>
                     Cancel
                 </Button>
-                <Button variant='contained' onClick={onSubmit} loading={isSubmitting}>
+                <Button variant='contained' onClick={onSubmit} loading={isSubmitting} disabled={submitDisabled}>
                     Create Order
                 </Button>
             </DialogActions>

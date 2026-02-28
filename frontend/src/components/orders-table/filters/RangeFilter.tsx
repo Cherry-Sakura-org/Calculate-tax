@@ -86,15 +86,15 @@ const validateRange = (
 const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [localValue, setLocalValue] = useState<RangeFilterValue>(value);
-    const [toBlurred, setToBlurred] = useState(false);
+    const [toFocused, setToFocused] = useState(false);
     const open = Boolean(anchorEl);
 
     const hasValue = value.from !== '' || value.to !== '';
     const config = getInputConfig(filterType);
     const isDate = filterType === 'range-date';
     const { fromError, toError } = useMemo(
-        () => validateRange(localValue, filterType, toBlurred),
-        [localValue, filterType, toBlurred],
+        () => validateRange(localValue, filterType, !toFocused),
+        [localValue, filterType, toFocused],
     );
     const hasError = fromError !== '' || toError !== '';
 
@@ -106,7 +106,7 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
     const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation();
         setLocalValue(value);
-        setToBlurred(false);
+        setToFocused(false);
         setAnchorEl(event.currentTarget);
     };
 
@@ -193,8 +193,8 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
                             placeholder={config.toLabel}
                             value={localValue.to}
                             onChange={(e) => setLocalValue((prev) => ({ ...prev, to: e.target.value }))}
-                            onBlur={() => setToBlurred(true)}
-                            onFocus={() => setToBlurred(false)}
+                            onFocus={() => setToFocused(true)}
+                            onBlur={() => setToFocused(false)}
                             error={toError !== ''}
                             helperText={toError}
                             slotProps={{
