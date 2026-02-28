@@ -123,6 +123,15 @@ export const sortArrow: SxProps<Theme> = {
     transition: 'transform 0.15s ease, opacity 0.15s ease',
 };
 
+export const filterActionButton: SxProps<Theme> = {
+    fontSize: '0.75rem',
+    textTransform: 'none',
+    px: 1.5,
+    py: 0.25,
+    minWidth: 'auto',
+    borderRadius: 1,
+};
+
 export const sortableLabel: SxProps<Theme> = {
     fontSize: 'inherit',
     fontWeight: 'inherit',
