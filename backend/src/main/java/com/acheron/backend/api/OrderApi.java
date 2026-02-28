@@ -25,12 +25,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,15 +75,17 @@ public class OrderApi {
                     
                     - `withinNewYork` — `true` = valid NY orders only, `false` = out-of-state only
                     
-                    - `county` — filter by county name (case-insensitive, e.g. `Suffolk`)
-                    
-                    - `region` — filter by region: `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
-                    
+                    - `counties` — filter by county names (comma-separated, case-insensitive, e.g. `Suffolk,Nassau`)
+
+                    - `regions` — filter by regions (comma-separated): `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
+
+                    - `manualOnly` — `true` = only manually created orders (no import file), `false` = only imported orders
+
                     - `importFileId` — filter by import file UUID
-                    
+
                     - `importFileIds` — filter by multiple import file UUIDs (comma-separated)
-                    
-                    **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&county=Suffolk`"""
+
+                    **Example**: `GET /orders?page=0&size=10&sort=orderedAt,desc&withinNewYork=true&counties=Suffolk,Nassau&manualOnly=true`"""
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Orders retrieved successfully",
@@ -102,8 +109,9 @@ public class OrderApi {
             @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
             @Parameter(description = "Filter by NY validity: true = within NY, false = outside NY", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
-            @Parameter(description = "Filter by county name (case-insensitive)") @RequestParam(required = false) String county,
-            @Parameter(description = "Filter by region: NYC, Long Island, Hudson Valley, Capital District, Upstate, Out of State") @RequestParam(required = false) String region,
+            @Parameter(description = "Filter by county names (comma-separated, case-insensitive)") @RequestParam(required = false) List<String> counties,
+            @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
+            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
@@ -121,8 +129,9 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounty(county))
-                .and(OrderSpecification.hasRegion(region))
+                .and(OrderSpecification.hasCounties(counties))
+                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
 
@@ -162,8 +171,9 @@ public class OrderApi {
             @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
             @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
-            @Parameter(description = "County name") @RequestParam(required = false) String county,
-            @Parameter(description = "Region") @RequestParam(required = false) String region,
+            @Parameter(description = "Filter by county names (comma-separated)") @RequestParam(required = false) List<String> counties,
+            @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
+            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId,
@@ -182,8 +192,9 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounty(county))
-                .and(OrderSpecification.hasRegion(region))
+                .and(OrderSpecification.hasCounties(counties))
+                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
 
@@ -272,8 +283,9 @@ public class OrderApi {
             @Parameter(description = "From date (ISO 8601)") @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "To date (ISO 8601)") @RequestParam(required = false) LocalDateTime to,
             @Parameter(description = "Within New York", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
-            @Parameter(description = "County name") @RequestParam(required = false) String county,
-            @Parameter(description = "Region") @RequestParam(required = false) String region,
+            @Parameter(description = "Filter by county names (comma-separated)") @RequestParam(required = false) List<String> counties,
+            @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
+            @Parameter(description = "Filter: true = manual orders only, false = imported only") @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
@@ -291,14 +303,104 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounty(county))
-                .and(OrderSpecification.hasRegion(region))
+                .and(OrderSpecification.hasCounties(counties))
+                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         long deleted = orderService.deleteByFilter(spec, userId);
         return ResponseEntity.ok(java.util.Map.of(
                 "message", "Orders deleted by filter",
+                "deletedCount", deleted
+        ));
+    }
+
+    @Operation(
+            summary = "Delete orders by IDs",
+            description = "Soft-deletes orders by a list of order UUIDs. Non-SUPER_ADMIN users can only delete their own orders."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orders deleted"),
+            @ApiResponse(responseCode = "400", description = "Empty ID list")
+    })
+    @DeleteMapping("/by-ids")
+    public ResponseEntity<java.util.Map<String, Object>> deleteByIds(
+            @RequestBody List<UUID> ids
+    ) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("At least one order ID is required");
+        }
+        long deleted = orderService.deleteByIds(ids);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Orders deleted by IDs",
+                "deletedCount", deleted
+        ));
+    }
+
+    @Operation(
+            summary = "Delete orders by CSV file",
+            description = "Soft-deletes orders by uploading a CSV file with an `id` column containing order UUIDs."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Orders deleted"),
+            @ApiResponse(responseCode = "400", description = "Invalid CSV format")
+    })
+    @DeleteMapping(value = "/by-csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<java.util.Map<String, Object>> deleteByCsv(
+            @RequestParam("file") MultipartFile file
+    ) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("CSV file is required");
+        }
+
+        List<UUID> ids = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+            String header = reader.readLine();
+            if (header == null || header.isBlank()) {
+                throw new IllegalArgumentException("CSV file is empty");
+            }
+
+            String[] columns = header.split(",");
+            int idIndex = -1;
+            for (int i = 0; i < columns.length; i++) {
+                if ("id".equalsIgnoreCase(columns[i].trim())) {
+                    idIndex = i;
+                    break;
+                }
+            }
+            if (idIndex < 0) {
+                throw new IllegalArgumentException("CSV must have an 'id' column header");
+            }
+
+            String line;
+            int lineNum = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNum++;
+                if (line.isBlank()) continue;
+                String[] fields = line.split(",", -1);
+                if (fields.length <= idIndex) {
+                    throw new IllegalArgumentException("Line " + lineNum + ": missing id column");
+                }
+                try {
+                    ids.add(UUID.fromString(fields[idIndex].trim()));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Line " + lineNum + ": invalid UUID '" + fields[idIndex].trim() + "'");
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to read CSV file: " + e.getMessage());
+        }
+
+        if (ids.isEmpty()) {
+            throw new IllegalArgumentException("CSV file contains no order IDs");
+        }
+
+        long deleted = orderService.deleteByIds(ids);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Orders deleted by CSV",
                 "deletedCount", deleted
         ));
     }

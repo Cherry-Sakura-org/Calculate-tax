@@ -174,6 +174,23 @@ public class OrderService {
         return orders.size();
     }
 
+    @Transactional
+    public long deleteByIds(List<UUID> ids) {
+        User currentUser = userService.getCurrentUser();
+        List<Order> orders = orderRepository.findAllById(ids);
+
+        if (currentUser.getRole() != Role.SUPER_ADMIN) {
+            orders = orders.stream()
+                    .filter(o -> o.getCreatedByAdmin().getId().equals(currentUser.getId()))
+                    .toList();
+        }
+
+        orderRepository.deleteAll(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders by IDs", orders.size());
+        return orders.size();
+    }
+
     private User getCurrentUser() {
         return userService.getCurrentUser();
     }

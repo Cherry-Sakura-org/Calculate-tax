@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface ImportFileRepository extends JpaRepository<ImportFile, UUID> {
 
     Page<ImportFile> findAllByOrderByImportedAtDesc(Pageable pageable);
+
+    Page<ImportFile> findAllByImportedByUserIdOrderByImportedAtDesc(UUID userId, Pageable pageable);
 }

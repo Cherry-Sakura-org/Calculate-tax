@@ -65,12 +65,33 @@ public final class OrderSpecification {
         return (root, query, cb) -> maxTotal == null ? null : cb.lessThanOrEqualTo(root.get("totalAmount"), maxTotal);
     }
 
-    public static Specification<Order> hasCounty(String county) {
-        return (root, query, cb) -> county == null ? null : cb.like(cb.lower(root.get("county")), "%" + county.toLowerCase() + "%");
+    public static Specification<Order> hasCounties(List<String> counties) {
+        return (root, query, cb) -> {
+            if (counties == null || counties.isEmpty()) return null;
+            return cb.lower(root.get("county")).in(
+                    counties.stream().map(String::toLowerCase).toList()
+            );
+        };
     }
 
-    public static Specification<Order> hasRegion(String region) {
-        return (root, query, cb) -> region == null ? null : cb.equal(cb.lower(root.get("region")), region.toLowerCase());
+    public static Specification<Order> hasRegions(List<String> regions) {
+        return (root, query, cb) -> {
+            if (regions == null || regions.isEmpty()) return null;
+            return cb.lower(root.get("region")).in(
+                    regions.stream().map(String::toLowerCase).toList()
+            );
+        };
+    }
+
+    public static Specification<Order> isManualOrder(Boolean manualOnly) {
+        return (root, query, cb) -> {
+            if (manualOnly == null) return null;
+            if (manualOnly) {
+                return cb.isNull(root.get("importFile"));
+            } else {
+                return cb.isNotNull(root.get("importFile"));
+            }
+        };
     }
 
     public static Specification<Order> hasImportFileId(UUID importFileId) {
