@@ -10,6 +10,7 @@ const targets = ['last 2 versions', '> 0.2%', 'not dead', 'Firefox ESR'];
 export default defineConfig({
     devServer: {
         port: 5173,
+        historyApiFallback: true,
     },
     entry: {
         main: './src/main.tsx',

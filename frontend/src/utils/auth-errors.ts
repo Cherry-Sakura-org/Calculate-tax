@@ -27,7 +27,7 @@ export const getErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
         return error.message;
     }
-    return 'Невідома помилка';
+    return 'Unknown error';
 };
 
 export const getErrorCode = (error: unknown): AuthError['code'] => {

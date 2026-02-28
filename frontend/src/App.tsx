@@ -1,41 +1,26 @@
-import { AppBar, Toolbar, Stack, Typography } from '@mui/material';
+import { Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastContainer } from 'react-toastify';
-import OrdersTable from './components/orders-table/OrdersTable';
-import AuthHeaderButton from './components/auth/AuthHeaderButton';
-import * as styles from './app.styles';
+import PublicLayout from './components/layout/PublicLayout';
+import AuthenticatedLayout from './components/layout/AuthenticatedLayout';
+import LoginPage from './components/login/LoginPage';
+import OrdersPage from './components/OrdersPage';
 
 const queryClient = new QueryClient();
-
-function AppContent() {
-    return (
-        <>
-            <Stack sx={styles.root}>
-                {/* Header */}
-                <AppBar position='static' elevation={0} sx={styles.appBar}>
-                    <Toolbar sx={styles.toolbar}>
-                        <Typography variant='h6' sx={styles.logo}>
-                            Instant Wellness Kits
-                        </Typography>
-                        <AuthHeaderButton />
-                    </Toolbar>
-                </AppBar>
-
-                {/* Page content */}
-                <Stack sx={styles.content}>
-                    <OrdersTable />
-                </Stack>
-            </Stack>
-
-            <ToastContainer />
-        </>
-    );
-}
 
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <AppContent />
+            <Routes>
+                <Route element={<PublicLayout />}>
+                    <Route path='/login' element={<LoginPage />} />
+                </Route>
+                <Route element={<AuthenticatedLayout />}>
+                    <Route path='/' element={<OrdersPage />} />
+                </Route>
+            </Routes>
+
+            <ToastContainer />
         </QueryClientProvider>
     );
 }
