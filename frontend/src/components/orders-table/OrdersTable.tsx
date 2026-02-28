@@ -27,7 +27,7 @@ const OrdersTable = () => {
     const csvSelector = useCsvFileSelector();
 
     const importFileIds = csvSelector.selectedIds.size > 0
-        ? [...csvSelector.selectedIds].join(',')
+        ? [...csvSelector.selectedIds].sort().join(',')
         : undefined;
 
     const {
