@@ -32,33 +32,33 @@ export default function LoginForm({ login, onSuccess }: LoginFormProps) {
     });
 
     return (
-        <>
+        <Stack component='form' onSubmit={onSubmit} spacing={3}>
             {login.error && (
                 <Alert severity='error' sx={{ mb: 2 }}>
                     {getErrorMessage(login.error)}
                 </Alert>
             )}
 
-            <Stack component='form' onSubmit={onSubmit} spacing={3}>
-                <TextFormField
-                    name='email'
-                    control={control}
-                    label='Email'
-                    autoComplete='email'
-                    fullWidth
-                />
-                <PasswordFormField name='password' control={control} label='Password' fullWidth />
-                <Button
-                    type='submit'
-                    variant='contained'
-                    fullWidth
-                    loading={login.isPending}
-                    disabled={login.isPending}
-                    sx={styles.submitButton}
-                >
-                    Sign In
-                </Button>
-            </Stack>
-        </>
+            <TextFormField
+                name='email'
+                control={control}
+                label='Email'
+                autoComplete='email'
+                fullWidth
+            />
+
+            <PasswordFormField name='password' control={control} label='Password' fullWidth />
+
+            <Button
+                type='submit'
+                variant='contained'
+                fullWidth
+                loading={login.isPending}
+                disabled={login.isPending}
+                sx={styles.submitButton}
+            >
+                Sign In
+            </Button>
+        </Stack>
     );
 }
