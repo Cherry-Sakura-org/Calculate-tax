@@ -2,7 +2,7 @@ import type { SxProps, Theme } from '@mui/material';
 
 export const selectButton: SxProps<Theme> = {
     textTransform: 'none',
-    minWidth: 180,
+    minWidth: 210,
     justifyContent: 'space-between',
     whiteSpace: 'nowrap',
 };
@@ -15,8 +15,6 @@ export const menuItem: SxProps<Theme> = {
 export const selectAllItem: SxProps<Theme> = {
     py: 0.5,
     px: 1,
-    borderBottom: 1,
-    borderColor: 'divider',
 };
 
 export const onlyButton: SxProps<Theme> = {

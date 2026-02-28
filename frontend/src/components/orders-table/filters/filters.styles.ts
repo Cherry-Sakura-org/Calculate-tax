@@ -11,7 +11,7 @@ export const filterIconButton: SxProps<Theme> = {
         bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
     },
     '& .MuiSvgIcon-root': {
-        fontSize: '0.875rem',
+        fontSize: '1rem',
     },
 };
 
@@ -19,9 +19,9 @@ export const filterIconButtonActive: SxProps<Theme> = {
     ...filterIconButton,
     opacity: 1,
     color: 'primary.main',
-    bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+    bgcolor: (t) => alpha(t.palette.primary.main, 0.18),
     '&:hover': {
-        bgcolor: (t) => alpha(t.palette.primary.main, 0.15),
+        bgcolor: (t) => alpha(t.palette.primary.main, 0.26),
     },
 };
 

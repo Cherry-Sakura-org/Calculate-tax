@@ -24,6 +24,7 @@ export const paper: SxProps<Theme> = {
 export const headerContainer: SxProps<Theme> = {
     overflow: 'hidden',
     flexShrink: 0,
+    borderRadius: 0,
 };
 
 export const headerCell: SxProps<Theme> = {

@@ -4,6 +4,7 @@ import {
     Button,
     Checkbox,
     ClickAwayListener,
+    Divider,
     ListItemText,
     MenuList,
     MenuItem,
@@ -46,9 +47,10 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
         }
     };
 
-    const label = files.length === 0
-        ? 'No files'
-        : `${selectedCount} of ${files.length} files`;
+    const label =
+        files.length === 0
+            ? 'No CSV files selected'
+            : `CSV files selected: ${selectedCount} of ${files.length}`;
 
     return (
         <>
@@ -76,10 +78,7 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
                             </Typography>
                         ) : (
                             <MenuList dense>
-                                <MenuItem
-                                    onClick={handleToggleAll}
-                                    sx={styles.selectAllItem}
-                                >
+                                <MenuItem onClick={handleToggleAll} sx={styles.selectAllItem}>
                                     <Checkbox
                                         size='small'
                                         checked={allSelected}
@@ -87,20 +86,21 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
                                     />
                                     <ListItemText primary='Select all' />
                                 </MenuItem>
+                                <Divider />
                                 {files.map((file) => (
                                     <MenuItem
                                         key={file.id}
                                         onClick={() => onToggle(file.id)}
                                         sx={styles.menuItem}
                                     >
-                                        <Checkbox
-                                            size='small'
-                                            checked={selectedIds.has(file.id)}
-                                        />
+                                        <Checkbox size='small' checked={selectedIds.has(file.id)} />
                                         <ListItemText primary={file.original_filename} />
                                         <Box
                                             component='span'
-                                            onClick={(e) => { e.stopPropagation(); onSelectOnly(file.id); }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onSelectOnly(file.id);
+                                            }}
                                             sx={styles.onlyButton}
                                         >
                                             Only
