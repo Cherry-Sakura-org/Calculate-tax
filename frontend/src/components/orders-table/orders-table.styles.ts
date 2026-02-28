@@ -60,6 +60,15 @@ export const highlightedCell: SxProps<Theme> = {
     bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
 };
 
+export const toolbar: SxProps<Theme> = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    px: 3,
+    py: 1,
+    borderBottom: (t) => `1px solid ${alpha(t.palette.divider, 0.5)}`,
+};
+
 export const scrollStatus: SxProps<Theme> = {
     display: 'flex',
     justifyContent: 'center',

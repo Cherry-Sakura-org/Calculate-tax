@@ -14,6 +14,9 @@ export interface Order {
     tax_amount: number;
     total_amount: number;
     timestamp: string;
+    is_within_new_york: boolean;
+    county: string | null;
+    region: string | null;
     taxBreakdown: TaxBreakdown;
     jurisdictions: string[];
 }
@@ -22,12 +25,23 @@ export interface OrdersParams {
     page?: number;
     size?: number;
     sort?: string[];
-    date_from?: string;
-    date_to?: string;
-    latitude?: number;
-    longitude?: number;
-    min_tax_rate?: number;
-    max_tax_rate?: number;
+    from?: string;
+    to?: string;
+    minLat?: number;
+    maxLat?: number;
+    minLon?: number;
+    maxLon?: number;
+    minSubtotal?: number;
+    maxSubtotal?: number;
+    minTotal?: number;
+    maxTotal?: number;
+    minTaxRate?: number;
+    maxTaxRate?: number;
+    withinNewYork?: boolean;
+    county?: string;
+    region?: string;
+    importFileId?: string;
+    importFileIds?: string[];
 }
 
 export interface PageMetadata {
@@ -52,4 +66,18 @@ export interface ImportResponse {
     imported: number;
     failed: number;
     errors?: string[];
+}
+
+export interface ImportFile {
+    id: string;
+    original_filename: string;
+    file_size_bytes: number;
+    total_records: number;
+    successful_records: number;
+    failed_records: number;
+    out_of_ny_records: number;
+    duration_ms: number;
+    records_per_second: number;
+    imported_at: string;
+    status: string;
 }

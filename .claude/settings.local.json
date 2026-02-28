@@ -4,7 +4,8 @@
       "Bash(npm install)",
       "Bash(curl:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImlkIjoiYTg2MzUwZjMtNTBjMS00ZTFkLWJlMWQtNzM1MzhjMjE3NGMyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyMjM2OTcyLCJleHAiOjE3NzIyNDc3NzJ9.xxzrfT4e3-_W6i0xoBXMn47S9n5zPsdtaf7FacvO8GlqIcPqiwjZxlG9RcPHILohVI3vB2pMsqw1FjzQcCrq3w\")",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImlkIjoiYTg2MzUwZjMtNTBjMS00ZTFkLWJlMWQtNzM1MzhjMjE3NGMyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyMjM3MTAyLCJleHAiOjE3NzIyNDc5MDJ9.xd9ygLNsRaqavAtgW5N5FHQ6yU2fHT8w7dax-qs2cYIm-7ffiSfIKBcMIy4X9K7iqn5YNzxwnXw3OsnIDtbaRQ\")"
+      "Bash(TOKEN=\"eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImlkIjoiYTg2MzUwZjMtNTBjMS00ZTFkLWJlMWQtNzM1MzhjMjE3NGMyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzcyMjM3MTAyLCJleHAiOjE3NzIyNDc5MDJ9.xd9ygLNsRaqavAtgW5N5FHQ6yU2fHT8w7dax-qs2cYIm-7ffiSfIKBcMIy4X9K7iqn5YNzxwnXw3OsnIDtbaRQ\")",
+      "Bash(npm run:*)"
     ]
   }
 }

@@ -1,5 +1,12 @@
 import { apiClient } from './client';
-import type { CreateOrderPayload, Order, OrdersParams, PaginatedResponse, ImportResponse } from '../types/order';
+import type {
+    CreateOrderPayload,
+    ImportFile,
+    Order,
+    OrdersParams,
+    PaginatedResponse,
+    ImportResponse,
+} from '../types/order';
 
 // API currently returns array, will return PaginatedResponse when backend pagination is ready
 type OrdersResponse = Order[] | PaginatedResponse<Order>;
@@ -42,13 +49,34 @@ export const ordersApi = {
         window.URL.revokeObjectURL(url);
     },
 
-    import: (file: File) => {
+    import: (files: File[]) => {
         const formData = new FormData();
-        formData.append('file', file);
+        files.forEach((file) => formData.append('file', file));
         return apiClient
             .post<ImportResponse>('orders/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);
+    },
+
+    listImportFiles: async (): Promise<ImportFile[]> => {
+        const response = await apiClient.get<PaginatedResponse<ImportFile>>('/orders/import-files', {
+            params: { size: 100 },
+        });
+        return response.data.content;
+    },
+
+    deleteByFilter: async (params: Omit<OrdersParams, 'page' | 'size' | 'sort'>): Promise<number> => {
+        const response = await apiClient.delete<{ deletedCount: number }>('/orders/by-filter', {
+            params,
+        });
+        return response.data.deletedCount;
+    },
+
+    deleteByImportFile: async (importFileId: string): Promise<number> => {
+        const response = await apiClient.delete<{ deletedCount: number }>(
+            `/orders/by-import-file/${importFileId}`,
+        );
+        return response.data.deletedCount;
     },
 };
