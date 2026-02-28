@@ -129,8 +129,7 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounties(counties))
-                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
@@ -192,8 +191,7 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounties(counties))
-                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));
@@ -303,8 +301,7 @@ public class OrderApi {
                 .and(OrderSpecification.orderedAfter(from))
                 .and(OrderSpecification.orderedBefore(to))
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
-                .and(OrderSpecification.hasCounties(counties))
-                .and(OrderSpecification.hasRegions(regions))
+                .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.isManualOrder(manualOnly))
                 .and(OrderSpecification.hasImportFileId(importFileId))
                 .and(OrderSpecification.hasImportFileIds(importFileIds));

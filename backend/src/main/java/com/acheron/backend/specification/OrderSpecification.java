@@ -65,20 +65,32 @@ public final class OrderSpecification {
         return (root, query, cb) -> maxTotal == null ? null : cb.lessThanOrEqualTo(root.get("totalAmount"), maxTotal);
     }
 
-    public static Specification<Order> hasCounties(List<String> counties) {
+    public static Specification<Order> hasCountiesOrRegions(List<String> counties, List<String> regions) {
         return (root, query, cb) -> {
-            if (counties == null || counties.isEmpty()) return null;
-            return cb.lower(root.get("county")).in(
-                    counties.stream().map(String::toLowerCase).toList()
-            );
-        };
-    }
+            boolean hasCounties = counties != null && !counties.isEmpty();
+            boolean hasRegions = regions != null && !regions.isEmpty();
 
-    public static Specification<Order> hasRegions(List<String> regions) {
-        return (root, query, cb) -> {
-            if (regions == null || regions.isEmpty()) return null;
-            return cb.lower(root.get("region")).in(
-                    regions.stream().map(String::toLowerCase).toList()
+            if (!hasCounties && !hasRegions) return null;
+
+            if (hasCounties && !hasRegions) {
+                return cb.lower(root.get("county")).in(
+                        counties.stream().map(String::toLowerCase).toList()
+                );
+            }
+
+            if (!hasCounties) {
+                return cb.lower(root.get("region")).in(
+                        regions.stream().map(String::toLowerCase).toList()
+                );
+            }
+
+            return cb.or(
+                    cb.lower(root.get("county")).in(
+                            counties.stream().map(String::toLowerCase).toList()
+                    ),
+                    cb.lower(root.get("region")).in(
+                            regions.stream().map(String::toLowerCase).toList()
+                    )
             );
         };
     }
