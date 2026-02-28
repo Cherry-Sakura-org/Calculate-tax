@@ -11,6 +11,14 @@ spring:
   application:
     name: backend
 
+  profiles:
+    active: dev
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
   threads:
     virtual:
       enabled: true
@@ -36,6 +44,12 @@ spring:
 
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
 
   main:
     banner-mode: off
@@ -67,5 +81,30 @@ spring:
     job:
       enabled: false
 
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:dummy}
+            client-secret: ${GITHUB_CLIENT_SECRET:dummy}
+            scope: user:email,read:user
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:dummy}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dummy}
+            scope: openid,profile,email
+
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-change-in-production-please-32chars}
+  ttl: ${JWT_TTL:10800000}
+  cookie:
+    secure: ${JWT_COOKIE_SECURE:false}
+    same-site: ${JWT_COOKIE_SAME_SITE:Lax}
+    max-age: ${JWT_COOKIE_MAX_AGE:10800}
+
 frontend:
   url: ${FRONTEND_URL:http://localhost:5173}
+
+app:
+  import:
+    max-file-size-bytes: ${IMPORT_MAX_FILE_SIZE_BYTES:524288000}

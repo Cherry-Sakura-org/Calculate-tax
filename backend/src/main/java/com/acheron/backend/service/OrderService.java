@@ -1,7 +1,6 @@
 package com.acheron.backend.service;
 
 import com.acheron.backend.dto.TaxCalculationResult;
-import com.acheron.backend.dto.batch.BatchJobExecutionResult;
 import com.acheron.backend.dto.request.OrderRequest;
 import com.acheron.backend.dto.response.OrderResponse;
 import com.acheron.backend.entity.Order;
@@ -11,29 +10,26 @@ import com.acheron.backend.repository.OrderRepository;
 import com.acheron.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.job.Job;
-import org.springframework.batch.core.job.JobExecution;
-import org.springframework.batch.core.job.parameters.JobParameters;
-import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.step.StepExecution;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
+import com.acheron.backend.entity.Role;
+import com.acheron.backend.repository.ImportFileRepository;
+import com.acheron.backend.specification.OrderSpecification;
+import jakarta.persistence.EntityManager;
+
+import com.acheron.backend.entity.ImportFile;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,20 +37,55 @@ import java.util.UUID;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final TaxCalculationService taxCalculationService;
-    private final JobLauncher jobLauncher;
-    private final Job importOrderJob;
+    private final ImportFileRepository importFileRepository;
+    private final GeoJsonTaxService geoJsonTaxService;
+    private final UserService userService;
+    private final DashboardService dashboardService;
+    private final EntityManager entityManager;
 
-    public List<OrderResponse> getAllOrders(Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable)
-                .stream()
-                .map(OrderResponse::fromEntity)
-                .toList();
+                .map(OrderResponse::fromEntity);
+    }
+
+    public Page<OrderResponse> getAllOrders(Specification<Order> spec, Pageable pageable) {
+        return orderRepository.findAll(spec, pageable)
+                .map(OrderResponse::fromEntity);
+    }
+
+    public Page<OrderResponse> getAllOrdersForCurrentUser(Specification<Order> spec, Pageable pageable, UUID userIdFilter) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> finalSpec = spec;
+
+        if (currentUser.getRole() == Role.SUPER_ADMIN) {
+            if (userIdFilter != null) {
+                finalSpec = finalSpec.and(OrderSpecification.createdByUserId(userIdFilter));
+            }
+        } else {
+            finalSpec = finalSpec.and(OrderSpecification.createdByUserId(currentUser.getId()));
+        }
+
+        return orderRepository.findAll(finalSpec, pageable).map(OrderResponse::fromEntity);
+    }
+
+    public List<Order> getAllOrdersListForCurrentUser(Specification<Order> spec, UUID userIdFilter) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> finalSpec = spec;
+
+        if (currentUser.getRole() == Role.SUPER_ADMIN) {
+            if (userIdFilter != null) {
+                finalSpec = finalSpec.and(OrderSpecification.createdByUserId(userIdFilter));
+            }
+        } else {
+            finalSpec = finalSpec.and(OrderSpecification.createdByUserId(currentUser.getId()));
+        }
+
+        return orderRepository.findAll(finalSpec);
     }
 
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
-        TaxCalculationResult taxResult = taxCalculationService.calculateTaxForLocation(
+        TaxCalculationResult taxResult = geoJsonTaxService.calculateTax(
                 request.latitude(),
                 request.longitude()
         );
@@ -85,6 +116,9 @@ public class OrderService {
                 .compositeTaxRate(taxResult.getCompositeTaxRate())
                 .taxAmount(taxAmount)
                 .totalAmount(totalAmount)
+                .isWithinNewYork(taxResult.isWithinNewYork())
+                .county(taxResult.getCounty())
+                .region(taxResult.getRegion())
                 .createdByAdmin(currentUser)
                 .build();
 
@@ -92,87 +126,98 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        log.info("Order created successfully: orderId={}, totalAmount={}", savedOrder.getId(), totalAmount);
+        log.info("Order created: orderId={}, total={}", savedOrder.getId(), totalAmount);
 
         return OrderResponse.fromEntity(savedOrder);
     }
 
-    @Deprecated(since = "6.0", forRemoval = true)
-    public BatchJobExecutionResult importFromCsv(MultipartFile file) {
-        try {
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("CSV file is empty");
-            }
-
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".csv")) {
-                throw new IllegalArgumentException("File must be a CSV file");
-            }
-
-            Path tempDir = Files.createTempDirectory("batch-csv-");
-            String uniqueFilename = UUID.randomUUID() + "_" + originalFilename;
-            Path tempFile = tempDir.resolve(uniqueFilename);
-            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-
-            log.info("Saved temporary CSV file: {}", tempFile.toAbsolutePath());
-
-            JobParameters jobParameters = new JobParametersBuilder()
-                    .addString("filename", originalFilename)
-                    .addLong("timestamp", System.currentTimeMillis())
-                    .addString("filePath", tempFile.toAbsolutePath().toString())
-                    .toJobParameters();
-
-            JobExecution jobExecution = jobLauncher.run(importOrderJob, jobParameters);
-
-            return buildBatchJobResult(jobExecution);
-
-        } catch (IOException e) {
-            log.error("Failed to read CSV file", e);
-            throw new IllegalArgumentException("Failed to read CSV file: " + e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("Failed to execute batch job", e);
-            throw new IllegalStateException("Failed to execute CSV import job: " + e.getMessage(), e);
-        }
+    @Transactional
+    public long deleteAllOrders() {
+        long count = orderRepository.countAllOrders();
+        entityManager.createNativeQuery("DELETE FROM order_tax_breakdowns").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM orders").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM import_files").executeUpdate();
+        dashboardService.evictAllCaches();
+        log.warn("TEST: hard-deleted all orders ({}), tax breakdowns, and import files", count);
+        return count;
     }
 
-    private BatchJobExecutionResult buildBatchJobResult(JobExecution jobExecution) {
-        StepExecution stepExecution = jobExecution.getStepExecutions().stream()
-                .findFirst()
-                .orElse(null);
+    @Transactional
+    public long deleteByImportFileId(UUID importFileId) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> spec = Specification.where(OrderSpecification.hasImportFileId(importFileId));
 
-        int totalRecords = 0;
-        int processedRecords = 0;
-        int failedRecords = 0;
-
-        if (stepExecution != null) {
-            totalRecords = (int) (stepExecution.getReadCount() + stepExecution.getReadSkipCount());
-            processedRecords = (int) stepExecution.getWriteCount();
-            failedRecords = (int) stepExecution.getSkipCount();
+        if (currentUser.getRole() != Role.SUPER_ADMIN) {
+            spec = spec.and(OrderSpecification.createdByUserId(currentUser.getId()));
         }
 
-        String errorMessage = null;
-        if (jobExecution.getStatus() == BatchStatus.FAILED) {
-            errorMessage = jobExecution.getAllFailureExceptions().stream()
-                    .map(Throwable::getMessage)
-                    .reduce((msg1, msg2) -> msg1 + "; " + msg2)
-                    .orElse("Unknown error");
+        List<Order> orders = orderRepository.findAll(spec);
+        orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders for importFileId={}", orders.size(), importFileId);
+        return orders.size();
+    }
+
+    @Transactional
+    public long deleteByFilter(Specification<Order> spec, UUID userIdFilter) {
+        User currentUser = userService.getCurrentUser();
+        Specification<Order> finalSpec = spec;
+
+        if (currentUser.getRole() == Role.SUPER_ADMIN) {
+            if (userIdFilter != null) {
+                finalSpec = finalSpec.and(OrderSpecification.createdByUserId(userIdFilter));
+            }
+        } else {
+            finalSpec = finalSpec.and(OrderSpecification.createdByUserId(currentUser.getId()));
         }
 
-        return BatchJobExecutionResult.builder()
-                .executionId(jobExecution.getJobInstanceId())
-                .status(jobExecution.getStatus().name())
-                .totalRecords(totalRecords)
-                .processedRecords(processedRecords)
-                .failedRecords(failedRecords)
-                .startTime(jobExecution.getStartTime())
-                .endTime(jobExecution.getEndTime())
-                .errorMessage(errorMessage)
-                .build();
+        List<Order> orders = orderRepository.findAll(finalSpec);
+        orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders by filter", orders.size());
+        return orders.size();
+    }
+
+    @Transactional
+    public long deleteByIds(List<UUID> ids) {
+        User currentUser = userService.getCurrentUser();
+        List<Order> orders = orderRepository.findAllById(ids);
+
+        if (currentUser.getRole() != Role.SUPER_ADMIN) {
+            orders = orders.stream()
+                    .filter(o -> o.getCreatedByAdmin().getId().equals(currentUser.getId()))
+                    .toList();
+        }
+
+        orderRepository.deleteAll(orders);
+        cleanupOrphanedImportFiles(orders);
+        dashboardService.evictAllCaches();
+        log.info("Soft-deleted {} orders by IDs", orders.size());
+        return orders.size();
+    }
+
+    private void cleanupOrphanedImportFiles(List<Order> deletedOrders) {
+        Set<UUID> importFileIds = deletedOrders.stream()
+                .filter(o -> o.getImportFile() != null)
+                .map(o -> o.getImportFile().getId())
+                .collect(Collectors.toSet());
+
+        if (importFileIds.isEmpty()) return;
+
+        entityManager.flush();
+
+        for (UUID importFileId : importFileIds) {
+            long remaining = orderRepository.countByImportFileId(importFileId);
+            if (remaining == 0) {
+                importFileRepository.deleteById(importFileId);
+                log.info("Deleted orphaned import file: {}", importFileId);
+            }
+        }
     }
 
     private User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername("acheron")
-                .orElseThrow(() -> new IllegalStateException("Current user not found: " + username));
+        return userService.getCurrentUser();
     }
 }

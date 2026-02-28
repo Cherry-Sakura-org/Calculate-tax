@@ -1,79 +1,66 @@
+import { apiClient } from './client';
 import { AuthUser, LoginPayload, RegisterPayload, AuthResponse, AuthError } from '../types/auth';
 
-// Helper function to create typed errors
-const createAuthError = (code: AuthError['code'], message: string, details?: Record<string, any>): AuthError => ({
+const createAuthError = (
+    code: AuthError['code'],
+    message: string,
+    details?: Record<string, any>,
+): AuthError => ({
     code,
     message,
-    details
+    details,
 });
 
-// Simulate network delay
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-// Mock user storage
-const mockUsers: AuthUser[] = [
-    {
-        id: '1',
-        username: 'demo_user',
-        email: 'demo@example.com',
-        createdAt: new Date().toISOString(),
-    },
-];
+const handleAuthError = (error: any): never => {
+    if (error?.response?.status === 401) {
+        throw createAuthError(
+            'INVALID_PASSWORD',
+            error.response.data?.message ?? 'Invalid credentials',
+        );
+    }
+    if (error?.response?.status === 404) {
+        throw createAuthError('USER_NOT_FOUND', error.response.data?.message ?? 'User not found');
+    }
+    if (error?.response?.status === 409) {
+        throw createAuthError('USER_EXISTS', error.response.data?.message ?? 'User already exists');
+    }
+    if (error?.response?.status === 422 || error?.response?.status === 400) {
+        throw createAuthError(
+            'VALIDATION_ERROR',
+            error.response.data?.message ?? 'Validation failed',
+            error.response.data,
+        );
+    }
+    if (!error?.response) {
+        throw createAuthError('NETWORK_ERROR', 'Network error — please check your connection');
+    }
+    throw createAuthError(
+        'UNKNOWN_ERROR',
+        error.response.data?.message ?? 'Something went wrong',
+        error.response.data,
+    );
+};
 
 export const authApi = {
     login: async (payload: LoginPayload): Promise<AuthResponse> => {
         try {
-            await delay(1000);
-
-            const user = mockUsers.find((u) => u.email === payload.email);
-            if (!user) {
-                throw createAuthError('USER_NOT_FOUND', 'Користувача з таким email не знайдено');
-            }
-            if (payload.password.length < 4) {
-                throw createAuthError('INVALID_PASSWORD', 'Невірний пароль');
-            }
-
-            const token = `mock-token-${user.id}-${Date.now()}`;
-            localStorage.setItem('auth_token', token);
-            localStorage.setItem('auth_user', JSON.stringify(user));
-
-            return { token, user };
+            const { data } = await apiClient.post<AuthResponse>('/auth/login', payload);
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('auth_user', JSON.stringify(data.user));
+            return data;
         } catch (error) {
-            if (error && typeof error === 'object' && 'code' in error) {
-                throw error;
-            }
-            throw createAuthError('UNKNOWN_ERROR', 'Помилка входу', { originalError: error });
+            return handleAuthError(error);
         }
     },
 
     register: async (payload: RegisterPayload): Promise<AuthResponse> => {
         try {
-            await delay(1200);
-
-            const exists = mockUsers.find((u) => u.email === payload.email);
-            if (exists) {
-                throw createAuthError('USER_EXISTS', 'Користувач з таким email вже існує');
-            }
-
-            const newUser: AuthUser = {
-                id: String(mockUsers.length + 1),
-                username: payload.username,
-                email: payload.email,
-                createdAt: new Date().toISOString(),
-            };
-
-            mockUsers.push(newUser);
-
-            const token = `mock-token-${newUser.id}-${Date.now()}`;
-            localStorage.setItem('auth_token', token);
-            localStorage.setItem('auth_user', JSON.stringify(newUser));
-
-            return { token, user: newUser };
+            const { data } = await apiClient.post<AuthResponse>('/auth/register', payload);
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('auth_user', JSON.stringify(data.user));
+            return data;
         } catch (error) {
-            if (error && typeof error === 'object' && 'code' in error) {
-                throw error;
-            }
-            throw createAuthError('UNKNOWN_ERROR', 'Помилка реєстрації', { originalError: error });
+            return handleAuthError(error);
         }
     },
 
@@ -82,12 +69,17 @@ export const authApi = {
         localStorage.removeItem('auth_user');
     },
 
-    getCurrentUser: (): AuthUser | null => {
-        const raw = localStorage.getItem('auth_user');
-        if (!raw) return null;
+    getCurrentUser: async (): Promise<AuthUser | null> => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return null;
+
         try {
-            return JSON.parse(raw);
+            const { data } = await apiClient.get<AuthUser>('/auth/me');
+            localStorage.setItem('auth_user', JSON.stringify(data));
+            return data;
         } catch {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
             return null;
         }
     },

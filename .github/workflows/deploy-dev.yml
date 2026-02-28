@@ -28,10 +28,9 @@ jobs:
       - name: Build & Push backend image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./backend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/backend_test_hackathon:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/backend_hack:latest
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
@@ -45,7 +44,7 @@ jobs:
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
             cd ${{ secrets.DEV_DEPLOY_PATH }}
-
+            docker-compose down
             docker-compose pull
             docker-compose up -d
 

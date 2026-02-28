@@ -7,6 +7,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.*;
 
@@ -21,7 +22,7 @@ import java.util.*;
 @SQLRestriction("deleted_at is NULL")
 @Table(name = "users")
 @Entity
-public class User extends AbstractAuditableEntity implements UserDetails {
+public class User extends AbstractAuditableEntity implements UserDetails, OAuth2User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,7 +37,6 @@ public class User extends AbstractAuditableEntity implements UserDetails {
     @ToString.Include
     private String username;
 
-    // Optional: NULL for OAuth-only users
     @Column(name = "password_hash")
     @JsonIgnore
     private String passwordHash;
@@ -45,7 +45,18 @@ public class User extends AbstractAuditableEntity implements UserDetails {
     @Builder.Default
     private Role role = Role.ADMIN;
 
-    // UserDetails implementation
+    @Column(name = "oauth_provider", length = 50)
+    private String oauthProvider;
+
+    @Column(name = "oauth_provider_id")
+    private String oauthProviderId;
+
+    @Transient
+    @JsonIgnore
+    @Builder.Default
+    private Map<String, Object> oauthAttributes = new HashMap<>();
+
+    // UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(role);
@@ -76,8 +87,22 @@ public class User extends AbstractAuditableEntity implements UserDetails {
         return true;
     }
 
-    // Helper methods
+    // OAuth2User
+    @Override
+    public Map<String, Object> getAttributes() {
+        return oauthAttributes;
+    }
+
+    @Override
+    public String getName() {
+        return username;
+    }
+
     public boolean hasPassword() {
         return passwordHash != null && !passwordHash.isEmpty();
+    }
+
+    public boolean isOAuthUser() {
+        return oauthProvider != null;
     }
 }

@@ -1,15 +1,4 @@
-import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Stack,
-    Typography,
-    alpha,
-    Box,
-} from '@mui/material';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from '@mui/material';
 import {
     COORDINATES_DECIMAL_SCALE,
     LATITUDE_MAX,
@@ -19,6 +8,7 @@ import {
 } from '../../constants/coordinates';
 import NumberFormField from '../../shared/form-fields/NumberFormField';
 import { useNewOrderDialogController } from './hooks';
+import * as styles from './new-order.styles';
 
 interface NewOrderDialogProps {
     open: boolean;
@@ -32,44 +22,16 @@ const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth='xs'>
-            <DialogTitle sx={{ pb: 1 }}>
-                <Stack direction='row' alignItems='center' spacing={1.5}>
-                    <Box
-                        sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: (t) =>
-                                `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.15)} 0%, ${alpha(t.palette.primary.dark, 0.1)} 100%)`,
-                            border: (t) =>
-                                `1px solid ${alpha(t.palette.primary.main, 0.2)}`,
-                        }}
-                    >
-                        <MyLocationIcon
-                            sx={{ fontSize: 18, color: 'primary.main' }}
-                        />
-                    </Box>
-                    <Box>
-                        <Typography variant='h6' sx={{ fontSize: '1.1rem' }}>
-                            New Delivery Order
-                        </Typography>
-                        <Typography variant='caption' color='text.secondary'>
-                            GPS coordinates + amount
-                        </Typography>
-                    </Box>
-                </Stack>
-            </DialogTitle>
+            <DialogTitle>New Delivery Order</DialogTitle>
             <DialogContent>
-                <Stack spacing={3} sx={{ pt: 2 }}>
+                <Stack spacing={2} sx={styles.formContent}>
                     <Stack direction='row' spacing={2}>
                         <NumberFormField
                             name='latitude'
                             control={control}
                             label='Latitude'
                             fullWidth
+                            size='medium'
                             min={LATITUDE_MIN}
                             max={LATITUDE_MAX}
                             decimalScale={COORDINATES_DECIMAL_SCALE}
@@ -79,6 +41,7 @@ const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
                             control={control}
                             label='Longitude'
                             fullWidth
+                            size='medium'
                             min={LONGITUDE_MIN}
                             max={LONGITUDE_MAX}
                             decimalScale={COORDINATES_DECIMAL_SCALE}
@@ -91,21 +54,17 @@ const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
                         fullWidth
                         min={0.01}
                         prefix='$'
+                        size='medium'
                         decimalScale={2}
                         fixedDecimalScale
                     />
                 </Stack>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2.5, pt: 1 }}>
+            <DialogActions sx={styles.dialogActions}>
                 <Button onClick={onClose} variant='text'>
                     Cancel
                 </Button>
-                <Button
-                    variant='contained'
-                    onClick={onSubmit}
-                    loading={isSubmitting}
-                    disabled={submitDisabled}
-                >
+                <Button variant='contained' onClick={onSubmit} loading={isSubmitting} disabled={submitDisabled}>
                     Create Order
                 </Button>
             </DialogActions>

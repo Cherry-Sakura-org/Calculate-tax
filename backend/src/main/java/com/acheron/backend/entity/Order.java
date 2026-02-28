@@ -51,6 +51,20 @@ public class Order extends AbstractAuditableEntity{
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
+    @Builder.Default
+    @Column(name = "is_within_new_york", nullable = false)
+    private Boolean isWithinNewYork = true;
+
+    @Column(name = "county", length = 100)
+    private String county;
+
+    @Column(name = "region", length = 50)
+    private String region;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "import_file_id")
+    private ImportFile importFile;
+
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private OrderTaxBreakdown taxBreakdown;
 
