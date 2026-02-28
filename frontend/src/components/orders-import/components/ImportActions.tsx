@@ -34,12 +34,6 @@ export const ImportActions: React.FC<ImportActionsProps> = ({
                     sx={styles.fileChip}
                 />
             ))}
-
-            {(isSuccess || isError) && (
-                <Button variant='outlined' size='small' onClick={onReset}>
-                    Reset
-                </Button>
-            )}
         </Stack>
     );
 };

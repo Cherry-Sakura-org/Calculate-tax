@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Button,
     Dialog,
@@ -37,6 +37,12 @@ export const OrdersImportDialog: React.FC<OrdersImportDialogProps> = ({ open, on
         openFilePicker,
     } = useFileUpload();
 
+    useEffect(() => {
+        if (isSuccess) {
+            onClose();
+        }
+    }, [isSuccess, onClose]);
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
             <DialogTitle>Import Orders</DialogTitle>
@@ -58,7 +64,7 @@ export const OrdersImportDialog: React.FC<OrdersImportDialogProps> = ({ open, on
                         onRemoveFile={handleRemoveFile}
                         onReset={handleReset}
                     />
-                    <ImportResult isSuccess={isSuccess} fileError={fileError} />
+                    <ImportResult fileError={fileError} />
                 </Stack>
             </DialogContent>
             <DialogActions sx={styles.dialogActions}>

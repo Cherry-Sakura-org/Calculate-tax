@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 import { ordersApi } from '../../../api/orders';
 import { validateCsvFile } from '../../../utils/file-utils';
 
@@ -16,6 +17,29 @@ export const useFileUpload = () => {
             Promise.all(files.map((file) => ordersApi.import(file))),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['orders'] });
+            toast.success('Orders imported successfully');
+        },
+        onError: (error: any) => {
+            let message = 'File import error';
+
+            if (error?.response) {
+                const status = error.response.status;
+                const serverMessage: string | undefined = error.response.data?.message;
+                const normalized = serverMessage?.toLowerCase() ?? '';
+
+                if (status === 400 && normalized.includes('corrupted')) {
+                    message = 'File is corrupted or has invalid format';
+                } else if (status === 422) {
+                    message = 'File contains invalid or removed rows';
+                } else {
+                    message = serverMessage || 'File import error';
+                }
+            } else {
+                message = 'Server is unavailable';
+            }
+
+            setFileError(message);
+            toast.error(message);
         },
     });
 

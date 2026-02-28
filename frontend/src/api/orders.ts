@@ -9,7 +9,7 @@ export const ordersApi = {
     },
 
     downloadCsv: async () => {
-        const response = await apiClient.get('/orders/csv', { responseType: 'blob' });
+        const response = await apiClient.get('/orders/export', { responseType: 'blob' });
         const url = URL.createObjectURL(response.data);
         const a = document.createElement('a');
         a.href = url;
@@ -31,7 +31,7 @@ export const ordersApi = {
         const formData = new FormData();
         formData.append('file', file);
         return apiClient
-            .post<ImportResponse>('/api/v1/native/import', formData, {
+            .post<ImportResponse>('/orders/import', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             })
             .then((r) => r.data);
