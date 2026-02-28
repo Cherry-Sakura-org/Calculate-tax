@@ -3,6 +3,8 @@
 **Automated drone delivery tax platform for New York State**
 
 > Hackathon project by **Team Acheron** — Full-stack platform that calculates precise, jurisdiction-level sales tax for drone-delivered wellness kits using native GeoJSON point-in-polygon lookups. Zero external API calls.
+>
+> Designed for **financial specialists** — the UI follows an Excel-like paradigm with virtualized tables, inline filtering, sortable columns, bulk operations, and CSV import/export workflows familiar to accounting and tax professionals.
 
 ---
 
@@ -84,6 +86,8 @@ npm run dev
 ```
 
 The frontend starts at `http://localhost:8080` and connects to the backend API at `https://api.ya3.uk` by default.
+
+**Demo credentials:** `test@test.com` / `password`
 
 ### 4. Build for production
 
@@ -204,7 +208,7 @@ All computation is **offline** — no external geocoding or tax API calls. Coord
 
 ### Virtualized Orders Table
 
-- TanStack Table + TanStack Virtual for infinite-scroll pagination
+- TanStack Table + TanStack Virtual for **endless scroll** instead of traditional page-based pagination — with 10,000+ homogeneous records, paging through numbered pages adds friction without benefit; continuous scrolling lets financial specialists scan data naturally, as they would in a spreadsheet
 - 17+ filter parameters: bounding box, amount ranges, tax rates, dates, county, region, import file
 - Sortable columns, bulk selection, density toggle
 - Out-of-NY rows highlighted
