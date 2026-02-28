@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
     Box,
     Checkbox,
+    CircularProgress,
     Collapse,
     IconButton,
     Popover,
@@ -16,62 +17,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import type { JurisdictionNode } from './types';
 import * as styles from './filters.styles';
 
-// Mock jurisdiction tree — will be replaced with real data from API
-const JURISDICTION_TREE: JurisdictionNode[] = [
-    {
-        id: 'ny-state',
-        label: 'New York State',
-        children: [
-            {
-                id: 'ny-metro',
-                label: 'New York Metro',
-                children: [
-                    { id: 'new-york-county', label: 'New York County' },
-                    { id: 'kings-county', label: 'Kings County' },
-                    { id: 'queens-county', label: 'Queens County' },
-                    { id: 'bronx-county', label: 'Bronx County' },
-                    { id: 'richmond-county', label: 'Richmond County' },
-                ],
-            },
-            {
-                id: 'long-island',
-                label: 'Long Island',
-                children: [
-                    { id: 'nassau-county', label: 'Nassau County' },
-                    { id: 'suffolk-county', label: 'Suffolk County' },
-                ],
-            },
-            {
-                id: 'hudson-valley',
-                label: 'Hudson Valley',
-                children: [
-                    { id: 'westchester-county', label: 'Westchester County' },
-                    { id: 'rockland-county', label: 'Rockland County' },
-                    { id: 'orange-county', label: 'Orange County' },
-                    { id: 'dutchess-county', label: 'Dutchess County' },
-                ],
-            },
-            {
-                id: 'upstate',
-                label: 'Upstate',
-                children: [
-                    { id: 'albany-county', label: 'Albany County' },
-                    { id: 'erie-county', label: 'Erie County' },
-                    { id: 'monroe-county', label: 'Monroe County' },
-                    { id: 'onondaga-county', label: 'Onondaga County' },
-                ],
-            },
-        ],
-    },
-    {
-        id: 'out-of-state',
-        label: 'Out of New York State',
-    },
-];
-
 interface JurisdictionFilterProps {
     selectedIds: Set<string>;
     onChange: (selectedIds: Set<string>) => void;
+    tree: JurisdictionNode[];
+    isLoading?: boolean;
 }
 
 const getAllLeafIds = (nodes: JurisdictionNode[]): string[] =>
@@ -130,7 +80,7 @@ const TreeNode = ({ node, selectedIds, onToggle, searchQuery }: TreeNodeProps) =
                         )}
                     </IconButton>
                 ) : (
-                    <Box sx={{ width: 24 }} />
+                    <Box sx={{ width: 20, flexShrink: 0 }} />
                 )}
                 <Checkbox
                     size='small'
@@ -169,7 +119,7 @@ const TreeNode = ({ node, selectedIds, onToggle, searchQuery }: TreeNodeProps) =
     );
 };
 
-const JurisdictionFilter = ({ selectedIds, onChange }: JurisdictionFilterProps) => {
+const JurisdictionFilter = ({ selectedIds, onChange, tree, isLoading }: JurisdictionFilterProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const open = Boolean(anchorEl);
@@ -200,11 +150,11 @@ const JurisdictionFilter = ({ selectedIds, onChange }: JurisdictionFilterProps) 
     };
 
     const handleSelectAll = () => {
-        const allIds = getAllLeafIds(JURISDICTION_TREE);
+        const allIds = getAllLeafIds(tree);
         onChange(new Set(allIds));
     };
 
-    const allLeafIds = getAllLeafIds(JURISDICTION_TREE);
+    const allLeafIds = getAllLeafIds(tree);
     const allSelected = allLeafIds.every((id) => selectedIds.has(id));
     const someSelected = allLeafIds.some((id) => selectedIds.has(id));
 
@@ -249,7 +199,6 @@ const JurisdictionFilter = ({ selectedIds, onChange }: JurisdictionFilterProps) 
 
                     {/* Select All */}
                     <Stack direction='row' alignItems='center' sx={{ mb: 0.25 }}>
-                        <Box sx={{ width: 24 }} />
                         <Checkbox
                             size='small'
                             checked={allSelected}
@@ -264,12 +213,16 @@ const JurisdictionFilter = ({ selectedIds, onChange }: JurisdictionFilterProps) 
                             sx={styles.jurisdictionCheckbox}
                         />
                         <Typography sx={{ ...styles.jurisdictionNodeLabel, fontWeight: 600 }}>
-                            All
+                            Select all
                         </Typography>
                     </Stack>
 
                     <Box sx={styles.jurisdictionTree}>
-                        {JURISDICTION_TREE.map((node) => (
+                        {isLoading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                <CircularProgress size={24} />
+                            </Box>
+                        ) : tree.map((node) => (
                             <TreeNode
                                 key={node.id}
                                 node={node}

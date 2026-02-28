@@ -55,7 +55,7 @@ export const filterTitle: SxProps<Theme> = {
 };
 
 export const rangeInputsStack: SxProps<Theme> = {
-    gap: 0.75,
+    gap: 2,
 };
 
 export const rangeInput: SxProps<Theme> = {
