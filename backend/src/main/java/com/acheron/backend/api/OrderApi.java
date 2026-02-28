@@ -79,8 +79,6 @@ public class OrderApi {
 
                     - `regions` — filter by regions (comma-separated): `NYC`, `Long Island`, `Hudson Valley`, `Capital District`, `Upstate`, `Out of State`
 
-                    - `manualOnly` — `true` = only manually created orders (no import file), `false` = only imported orders
-
                     - `importFileId` — filter by import file UUID
 
                     - `importFileIds` — filter by multiple import file UUIDs (comma-separated)
@@ -111,7 +109,6 @@ public class OrderApi {
             @Parameter(description = "Filter by NY validity: true = within NY, false = outside NY", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean withinNewYork,
             @Parameter(description = "Filter by county names (comma-separated, case-insensitive)") @RequestParam(required = false) List<String> counties,
             @Parameter(description = "Filter by regions (comma-separated)") @RequestParam(required = false) List<String> regions,
-            @Parameter(description = "Order source: true = manual only, false = imported only, omit = all", schema = @Schema(type = "boolean")) @RequestParam(required = false) Boolean manualOnly,
             @Parameter(description = "Filter by import file UUID") @RequestParam(required = false) UUID importFileId,
             @Parameter(description = "Filter by multiple import file UUIDs") @RequestParam(required = false) List<UUID> importFileIds,
             @Parameter(description = "Filter by user UUID (SUPER_ADMIN only)") @RequestParam(required = false) UUID userId
@@ -131,7 +128,7 @@ public class OrderApi {
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         return ResponseEntity.ok(orderService.getAllOrdersForCurrentUser(spec, pageable, userId));
     }
@@ -192,7 +189,7 @@ public class OrderApi {
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         List<Order> orders = orderService.getAllOrdersListForCurrentUser(spec, userId);
 
@@ -301,7 +298,7 @@ public class OrderApi {
                 .and(OrderSpecification.isWithinNewYork(withinNewYork))
                 .and(OrderSpecification.hasCountiesOrRegions(counties, regions))
                 .and(OrderSpecification.hasImportFileId(importFileId))
-                .and(OrderSpecification.hasSourceFilter(importFileIds, manualOnly));
+                .and(OrderSpecification.hasImportFileIds(importFileIds));
 
         long deleted = orderService.deleteByFilter(spec, userId);
         return ResponseEntity.ok(java.util.Map.of(

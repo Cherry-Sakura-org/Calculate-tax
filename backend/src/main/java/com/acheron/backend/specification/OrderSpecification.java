@@ -99,37 +99,10 @@ public final class OrderSpecification {
         return (root, query, cb) -> importFileId == null ? null : cb.equal(root.get("importFile").get("id"), importFileId);
     }
 
-    /**
-     * Combined source filter (importFileIds + manualOnly) with OR logic:
-     * - manualOnly=true  → only manual (importFile IS NULL), ignores importFileIds
-     * - manualOnly=false → only imported from selected files (or all imported if no files selected)
-     * - manualOnly=null  + importFileIds set → importFile IN (...) OR importFile IS NULL (both)
-     * - manualOnly=null  + no importFileIds  → no filter (all orders)
-     */
-    public static Specification<Order> hasSourceFilter(List<UUID> importFileIds, Boolean manualOnly) {
+    public static Specification<Order> hasImportFileIds(List<UUID> importFileIds) {
         return (root, query, cb) -> {
-            boolean hasFiles = importFileIds != null && !importFileIds.isEmpty();
-
-            if (manualOnly != null) {
-                if (manualOnly) {
-                    return cb.isNull(root.get("importFile"));
-                } else {
-                    if (hasFiles) {
-                        return root.get("importFile").get("id").in(importFileIds);
-                    }
-                    return cb.isNotNull(root.get("importFile"));
-                }
-            }
-
-            // manualOnly not set — if files selected, show those files + manual
-            if (hasFiles) {
-                return cb.or(
-                        root.get("importFile").get("id").in(importFileIds),
-                        cb.isNull(root.get("importFile"))
-                );
-            }
-
-            return null; // no filter
+            if (importFileIds == null || importFileIds.isEmpty()) return null;
+            return root.get("importFile").get("id").in(importFileIds);
         };
     }
 
