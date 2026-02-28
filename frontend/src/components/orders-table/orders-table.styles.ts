@@ -3,7 +3,7 @@ import { alpha } from '@mui/material';
 
 export const toolbar: SxProps<Theme> = {
     px: 2,
-    py: 1,
+    py: 1.5,
     flexShrink: 0,
 };
 
@@ -24,10 +24,20 @@ export const paper: SxProps<Theme> = {
 export const headerContainer: SxProps<Theme> = {
     overflow: 'hidden',
     flexShrink: 0,
-    bgcolor: 'transparent',
-    borderRadius: 0,
-    '& th': {
-        borderRadius: '0 !important',
+};
+
+export const headerCell: SxProps<Theme> = {
+    py: 1,
+    bgcolor: '#e8efe9 !important',
+    borderRadius: '0 !important',
+    '&:not(:last-child)::after': {
+        content: '""',
+        position: 'absolute',
+        right: 0,
+        top: '25%',
+        height: '50%',
+        width: '1px',
+        bgcolor: (t: Theme) => alpha(t.palette.divider, 0.5),
     },
 };
 
@@ -43,10 +53,22 @@ export const table: SxProps<Theme> = {
     bgcolor: 'transparent',
 };
 
-export const headerCell: SxProps<Theme> = {
+export const stickyHeaderCell: SxProps<Theme> = {
     py: 1,
     bgcolor: '#e8efe9 !important',
     borderRadius: '0 !important',
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
+    '&:not(:last-child)::after': {
+        content: '""',
+        position: 'absolute',
+        right: 0,
+        top: '25%',
+        height: '50%',
+        width: '1px',
+        bgcolor: (t: Theme) => alpha(t.palette.divider, 0.5),
+    },
 };
 
 export const emptyStateCell: SxProps<Theme> = {

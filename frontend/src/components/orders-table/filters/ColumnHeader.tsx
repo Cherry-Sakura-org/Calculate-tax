@@ -17,6 +17,7 @@ interface ColumnHeaderProps {
     jurisdictionLoading?: boolean;
     sortDirection?: SortDirection;
     onSort?: () => void;
+    align?: 'left' | 'right' | 'center';
 }
 
 const ColumnHeader = ({
@@ -30,34 +31,45 @@ const ColumnHeader = ({
     jurisdictionLoading,
     sortDirection,
     onSort,
-}: ColumnHeaderProps) => (
-    <Box sx={styles.headerCellContent}>
-        {sortDirection === 'asc' && <ArrowUpwardIcon sx={styles.sortArrow} />}
-        {sortDirection === 'desc' && <ArrowDownwardIcon sx={styles.sortArrow} />}
-        <Typography
-            component='span'
-            onClick={onSort}
-            sx={onSort ? styles.sortableLabel : { fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit' }}
-        >
-            {label}
-        </Typography>
-        {filterType && filterType !== 'jurisdiction' && rangeValue && onRangeChange && (
-            <RangeFilter
-                label={label}
-                filterType={filterType}
-                value={rangeValue}
-                onChange={onRangeChange}
-            />
-        )}
-        {filterType === 'jurisdiction' && jurisdictionValue && onJurisdictionChange && (
-            <JurisdictionFilter
-                selectedIds={jurisdictionValue}
-                onChange={onJurisdictionChange}
-                tree={jurisdictionTree ?? []}
-                isLoading={jurisdictionLoading}
-            />
-        )}
-    </Box>
-);
+    align,
+}: ColumnHeaderProps) => {
+    const isRight = align === 'right';
+
+    const filterElement = filterType && filterType !== 'jurisdiction' && rangeValue && onRangeChange ? (
+        <RangeFilter
+            label={label}
+            filterType={filterType}
+            value={rangeValue}
+            onChange={onRangeChange}
+        />
+    ) : filterType === 'jurisdiction' && jurisdictionValue && onJurisdictionChange ? (
+        <JurisdictionFilter
+            selectedIds={jurisdictionValue}
+            onChange={onJurisdictionChange}
+            tree={jurisdictionTree ?? []}
+            isLoading={jurisdictionLoading}
+        />
+    ) : null;
+
+    const sortIcon = sortDirection === 'asc'
+        ? <ArrowUpwardIcon sx={styles.sortArrowInline} />
+        : sortDirection === 'desc'
+            ? <ArrowDownwardIcon sx={styles.sortArrowInline} />
+            : null;
+
+    return (
+        <Box sx={{ ...styles.headerCellContent, ...(isRight && { justifyContent: 'flex-end' }) }}>
+            {sortIcon}
+            <Typography
+                component='span'
+                onClick={onSort}
+                sx={onSort ? styles.sortableLabel : { fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit' }}
+            >
+                {label}
+            </Typography>
+            {filterElement}
+        </Box>
+    );
+};
 
 export default ColumnHeader;

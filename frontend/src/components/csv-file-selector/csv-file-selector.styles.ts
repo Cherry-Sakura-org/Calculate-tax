@@ -19,6 +19,20 @@ export const selectAllItem: SxProps<Theme> = {
     borderColor: 'divider',
 };
 
+export const onlyButton: SxProps<Theme> = {
+    ml: 1,
+    px: 0.75,
+    py: 0.25,
+    fontSize: '0.7rem',
+    color: 'primary.main',
+    cursor: 'pointer',
+    borderRadius: 1,
+    flexShrink: 0,
+    '&:hover': {
+        backgroundColor: 'action.hover',
+    },
+};
+
 export const emptyText: SxProps<Theme> = {
     px: 2,
     py: 1.5,

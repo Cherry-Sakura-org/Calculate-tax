@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+    Box,
     Button,
     Checkbox,
     ClickAwayListener,
@@ -20,6 +21,7 @@ interface CsvFileSelectorProps {
     onToggle: (id: string) => void;
     onSelectAll: () => void;
     onDeselectAll: () => void;
+    onSelectOnly: (id: string) => void;
 }
 
 const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
@@ -28,6 +30,7 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
     onToggle,
     onSelectAll,
     onDeselectAll,
+    onSelectOnly,
 }) => {
     const [open, setOpen] = useState(false);
     const anchorRef = useRef<HTMLButtonElement>(null);
@@ -95,6 +98,13 @@ const CsvFileSelector: React.FC<CsvFileSelectorProps> = ({
                                             checked={selectedIds.has(file.id)}
                                         />
                                         <ListItemText primary={file.original_filename} />
+                                        <Box
+                                            component='span'
+                                            onClick={(e) => { e.stopPropagation(); onSelectOnly(file.id); }}
+                                            sx={styles.onlyButton}
+                                        >
+                                            Only
+                                        </Box>
                                     </MenuItem>
                                 ))}
                             </MenuList>

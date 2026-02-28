@@ -4,7 +4,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { DateTime } from 'luxon';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { COUNTY_TO_REGION, REGION_COUNTIES, useInfiniteOrders, useJurisdictions } from '../../api/use-orders';
+import {
+    COUNTY_TO_REGION,
+    REGION_COUNTIES,
+    useInfiniteOrders,
+    useJurisdictions,
+} from '../../api/use-orders';
 import type { Order, OrdersParams } from '../../types/order';
 import ColumnHeader from './filters/ColumnHeader';
 import type { FilterType, RangeFilterValue, SortDirection } from './filters/types';
@@ -97,6 +102,7 @@ const TaxRateBreakdown = ({ order }: { order: Order }) => (
 interface ColumnFilterMeta {
     width?: number;
     highlighted?: boolean;
+    align?: 'left' | 'right' | 'center';
     filterType?: FilterType;
     filterKey?: string;
 }
@@ -124,8 +130,7 @@ const SORT_FIELD_MAP: Record<string, string> = {
  * Extracts the region name from a jurisdiction node id.
  * Region node ids are prefixed with "region:", e.g. "region:NYC".
  */
-const parseRegion = (id: string): string | null =>
-    id.startsWith('region:') ? id.slice(7) : null;
+const parseRegion = (id: string): string | null => (id.startsWith('region:') ? id.slice(7) : null);
 
 const buildApiParams = (
     filters: Record<string, RangeFilterValue>,
@@ -146,8 +151,10 @@ const buildApiParams = (
     if (filters.timestamp.to) params.to = `${filters.timestamp.to}T23:59:59`;
 
     // Tax rate range (UI shows percent, API expects decimal)
-    if (filters.composite_tax_rate.from) params.minTaxRate = Number(filters.composite_tax_rate.from) / 100;
-    if (filters.composite_tax_rate.to) params.maxTaxRate = Number(filters.composite_tax_rate.to) / 100;
+    if (filters.composite_tax_rate.from)
+        params.minTaxRate = Number(filters.composite_tax_rate.from) / 100;
+    if (filters.composite_tax_rate.to)
+        params.maxTaxRate = Number(filters.composite_tax_rate.to) / 100;
 
     // Subtotal range
     if (filters.subtotal.from) params.minSubtotal = Number(filters.subtotal.from);
@@ -235,37 +242,41 @@ export const useOrdersTableController = (importFileIds?: string) => {
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
-    const apiParams = useMemo(
-        () => {
-            const params = buildApiParams(filters, sortColumn, sortDirection, jurisdictionFilter);
-            if (importFileIds) params.importFileIds = importFileIds;
-            return params;
+    const apiParams = useMemo(() => {
+        const params = buildApiParams(filters, sortColumn, sortDirection, jurisdictionFilter);
+        if (importFileIds) params.importFileIds = importFileIds;
+        return params;
+    }, [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds]);
+
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+        useInfiniteOrders(apiParams);
+
+    const toggleSort = useCallback(
+        (columnKey: string) => () => {
+            if (sortColumn !== columnKey) {
+                setSortColumn(columnKey);
+                setSortDirection('asc');
+            } else if (sortDirection === 'asc') {
+                setSortDirection('desc');
+            } else {
+                setSortColumn(null);
+                setSortDirection(null);
+            }
         },
-        [filters, sortColumn, sortDirection, jurisdictionFilter, importFileIds],
+        [sortColumn, sortDirection],
     );
-
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteOrders(apiParams);
-
-    const toggleSort = useCallback((columnKey: string) => () => {
-        if (sortColumn !== columnKey) {
-            setSortColumn(columnKey);
-            setSortDirection('asc');
-        } else if (sortDirection === 'asc') {
-            setSortDirection('desc');
-        } else {
-            setSortColumn(null);
-            setSortDirection(null);
-        }
-    }, [sortColumn, sortDirection]);
 
     const getSortDirection = useCallback(
         (columnKey: string): SortDirection => (sortColumn === columnKey ? sortDirection : null),
         [sortColumn, sortDirection],
     );
 
-    const updateFilter = useCallback((key: string) => (value: RangeFilterValue) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
-    }, []);
+    const updateFilter = useCallback(
+        (key: string) => (value: RangeFilterValue) => {
+            setFilters((prev) => ({ ...prev, [key]: value }));
+        },
+        [],
+    );
 
     const columns = useMemo(
         () => [
@@ -297,9 +308,10 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         label='Latitude'
                         sortDirection={getSortDirection('latitude')}
                         onSort={toggleSort('latitude')}
+                        align='right'
                     />
                 ),
-                meta: { width: 120 },
+                meta: { width: 120, align: 'right' },
                 cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
             }),
             columnHelper.accessor('longitude', {
@@ -308,9 +320,10 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         label='Longitude'
                         sortDirection={getSortDirection('longitude')}
                         onSort={toggleSort('longitude')}
+                        align='right'
                     />
                 ),
-                meta: { width: 130 },
+                meta: { width: 130, align: 'right' },
                 cell: (info) => <MutedCell>{info.getValue()?.toFixed(6) ?? '—'}</MutedCell>,
             }),
             columnHelper.accessor('jurisdictions', {
@@ -348,7 +361,11 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         onSort={toggleSort('timestamp')}
                     />
                 ),
-                meta: { width: 200, filterType: 'range-date', filterKey: 'timestamp' } satisfies ColumnFilterMeta,
+                meta: {
+                    width: 200,
+                    filterType: 'range-date',
+                    filterKey: 'timestamp',
+                } satisfies ColumnFilterMeta,
                 cell: (info) => (
                     <MutedCell>
                         {DateTime.fromISO(info.getValue()).toLocaleString(DateTime.DATETIME_SHORT)}
@@ -364,9 +381,16 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         onRangeChange={updateFilter('composite_tax_rate')}
                         sortDirection={getSortDirection('composite_tax_rate')}
                         onSort={toggleSort('composite_tax_rate')}
+                        align='right'
                     />
                 ),
-                meta: { highlighted: true, width: 100, filterType: 'range-percent', filterKey: 'composite_tax_rate' } satisfies ColumnFilterMeta,
+                meta: {
+                    highlighted: true,
+                    width: 150,
+                    align: 'right',
+                    filterType: 'range-percent',
+                    filterKey: 'composite_tax_rate',
+                } satisfies ColumnFilterMeta,
                 cell: (info) => (
                     <Tooltip
                         title={<TaxRateBreakdown order={info.row.original} />}
@@ -392,9 +416,16 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         onRangeChange={updateFilter('subtotal')}
                         sortDirection={getSortDirection('subtotal')}
                         onSort={toggleSort('subtotal')}
+                        align='right'
                     />
                 ),
-                meta: { highlighted: true, width: 100, filterType: 'range-currency', filterKey: 'subtotal' } satisfies ColumnFilterMeta,
+                meta: {
+                    highlighted: true,
+                    width: 150,
+                    align: 'right',
+                    filterType: 'range-currency',
+                    filterKey: 'subtotal',
+                } satisfies ColumnFilterMeta,
                 cell: (info) => (
                     <ValueCell>
                         {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
@@ -410,9 +441,16 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         onRangeChange={updateFilter('tax_amount')}
                         sortDirection={getSortDirection('tax_amount')}
                         onSort={toggleSort('tax_amount')}
+                        align='right'
                     />
                 ),
-                meta: { highlighted: true, width: 80, filterType: 'range-currency', filterKey: 'tax_amount' } satisfies ColumnFilterMeta,
+                meta: {
+                    highlighted: true,
+                    width: 120,
+                    align: 'right',
+                    filterType: 'range-currency',
+                    filterKey: 'tax_amount',
+                } satisfies ColumnFilterMeta,
                 cell: (info) => (
                     <Tooltip
                         title={<TaxBreakdown order={info.row.original} />}
@@ -438,9 +476,16 @@ export const useOrdersTableController = (importFileIds?: string) => {
                         onRangeChange={updateFilter('total_amount')}
                         sortDirection={getSortDirection('total_amount')}
                         onSort={toggleSort('total_amount')}
+                        align='right'
                     />
                 ),
-                meta: { highlighted: true, width: 90, filterType: 'range-currency', filterKey: 'total_amount' } satisfies ColumnFilterMeta,
+                meta: {
+                    highlighted: true,
+                    width: 150,
+                    align: 'right',
+                    filterType: 'range-currency',
+                    filterKey: 'total_amount',
+                } satisfies ColumnFilterMeta,
                 cell: (info) => (
                     <HighlightCell>
                         {info.getValue() != null ? `$${info.getValue().toFixed(2)}` : '—'}
@@ -448,7 +493,14 @@ export const useOrdersTableController = (importFileIds?: string) => {
                 ),
             }),
         ],
-        [filters, updateFilter, getSortDirection, toggleSort, jurisdictionTree, jurisdictionLoading],
+        [
+            filters,
+            updateFilter,
+            getSortDirection,
+            toggleSort,
+            jurisdictionTree,
+            jurisdictionLoading,
+        ],
     );
 
     const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);

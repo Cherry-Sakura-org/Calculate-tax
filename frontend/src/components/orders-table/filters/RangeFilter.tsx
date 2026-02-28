@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
+    Button,
     IconButton,
     Popover,
     Stack,
@@ -8,6 +9,7 @@ import {
     Typography,
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CloseIcon from '@mui/icons-material/Close';
 import type { FilterType, RangeFilterValue } from './types';
 import * as styles from './filters.styles';
 
@@ -45,6 +47,7 @@ const isReadyToValidate = (value: string) => {
 const validateRange = (
     localValue: RangeFilterValue,
     filterType: RangeFilterProps['filterType'],
+    checkCrossField: boolean,
 ): { fromError: string; toError: string } => {
     const errors = { fromError: '', toError: '' };
     const { from, to } = localValue;
@@ -62,13 +65,14 @@ const validateRange = (
             errors.toError = 'Date out of range (1999–2200)';
         }
         if (
+            checkCrossField &&
             fromReady && toReady &&
             !errors.fromError && !errors.toError &&
             from > to
         ) {
             errors.fromError = '"From" must be before "To"';
         }
-    } else if (from !== '' && to !== '') {
+    } else if (checkCrossField && from !== '' && to !== '') {
         const fromNum = Number(from);
         const toNum = Number(to);
         if (fromNum > toNum) {
@@ -82,14 +86,15 @@ const validateRange = (
 const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [localValue, setLocalValue] = useState<RangeFilterValue>(value);
+    const [toFocused, setToFocused] = useState(false);
     const open = Boolean(anchorEl);
 
     const hasValue = value.from !== '' || value.to !== '';
     const config = getInputConfig(filterType);
     const isDate = filterType === 'range-date';
     const { fromError, toError } = useMemo(
-        () => validateRange(localValue, filterType),
-        [localValue, filterType],
+        () => validateRange(localValue, filterType, !toFocused),
+        [localValue, filterType, toFocused],
     );
     const hasError = fromError !== '' || toError !== '';
 
@@ -101,15 +106,32 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
     const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation();
         setLocalValue(value);
+        setToFocused(false);
         setAnchorEl(event.currentTarget);
     };
 
+    const emptyValue: RangeFilterValue = { from: '', to: '' };
+    const isDirty = localValue.from !== value.from || localValue.to !== value.to;
+    const hasLocalValue = localValue.from !== '' || localValue.to !== '';
+
     const handleClose = () => {
         setAnchorEl(null);
-        if (!hasError) {
-            // Defer the heavy filter update so the popover closes instantly
-            // instead of being blocked by the table re-render
-            setTimeout(() => onChange(localValue), 0);
+        setLocalValue(value);
+    };
+
+    const handleApply = () => {
+        if (hasError) return;
+        onChange(localValue);
+        setAnchorEl(null);
+    };
+
+    const handleReset = () => {
+        if (isDirty) {
+            setLocalValue(value);
+        } else {
+            setLocalValue(emptyValue);
+            setAnchorEl(null);
+            setTimeout(() => onChange(emptyValue), 0);
         }
     };
 
@@ -133,9 +155,14 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
                 disableRestoreFocus
             >
                 <Box sx={styles.filterPopoverContent}>
-                    <Typography sx={styles.filterTitle}>
-                        {label}
-                    </Typography>
+                    <Stack direction='row' alignItems='center' justifyContent='space-between' sx={{ mb: 2 }}>
+                        <Typography sx={{ ...styles.filterTitle, mb: 0 }}>
+                            {label}
+                        </Typography>
+                        <IconButton size='small' onClick={handleClose} sx={{ p: 0.25 }}>
+                            <CloseIcon sx={{ fontSize: '1.125rem' }} />
+                        </IconButton>
+                    </Stack>
 
                     <Stack sx={styles.rangeInputsStack}>
                         <TextField
@@ -166,6 +193,8 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
                             placeholder={config.toLabel}
                             value={localValue.to}
                             onChange={(e) => setLocalValue((prev) => ({ ...prev, to: e.target.value }))}
+                            onFocus={() => setToFocused(true)}
+                            onBlur={() => setToFocused(false)}
                             error={toError !== ''}
                             helperText={toError}
                             slotProps={{
@@ -177,6 +206,27 @@ const RangeFilter = ({ label, filterType, value, onChange }: RangeFilterProps) =
                             }}
                             sx={styles.rangeInput}
                         />
+                    </Stack>
+
+                    <Stack direction='row' justifyContent='flex-end' gap={1} sx={{ mt: 1.5 }}>
+                        <Button
+                            size='small'
+                            variant='text'
+                            onClick={handleReset}
+                            disabled={!isDirty && !hasLocalValue}
+                            sx={styles.filterActionButton}
+                        >
+                            Reset
+                        </Button>
+                        <Button
+                            size='small'
+                            variant='contained'
+                            onClick={handleApply}
+                            disabled={!isDirty || hasError}
+                            sx={styles.filterActionButton}
+                        >
+                            Apply
+                        </Button>
                     </Stack>
                 </Box>
             </Popover>
