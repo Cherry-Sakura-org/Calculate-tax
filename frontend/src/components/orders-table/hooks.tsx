@@ -109,7 +109,12 @@ interface ColumnFilterMeta {
 
 const EMPTY_RANGE: RangeFilterValue = { from: '', to: '' };
 
-const ROW_HEIGHT_ESTIMATE = 49;
+export type TableDensity = 'default' | 'slim';
+
+const ROW_HEIGHT_MAP: Record<TableDensity, number> = {
+    default: 49,
+    slim: 33,
+};
 
 /** Maps UI column keys to API sort field names */
 const SORT_FIELD_MAP: Record<string, string> = {
@@ -222,7 +227,7 @@ const buildApiParams = (
     return params;
 };
 
-export const useOrdersTableController = (importFileIds?: string) => {
+export const useOrdersTableController = (importFileIds?: string, density: TableDensity = 'default') => {
     const [filters, setFilters] = useState<Record<string, RangeFilterValue>>({
         latitude: { ...EMPTY_RANGE },
         longitude: { ...EMPTY_RANGE },
@@ -518,7 +523,7 @@ export const useOrdersTableController = (importFileIds?: string) => {
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
-        estimateSize: () => ROW_HEIGHT_ESTIMATE,
+        estimateSize: () => ROW_HEIGHT_MAP[density],
         overscan: 30,
     });
 

@@ -13,18 +13,23 @@ import {
     Paper,
     Typography,
     Stack,
+    ToggleButtonGroup,
+    ToggleButton,
 } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import ViewStreamIcon from '@mui/icons-material/ViewStream';
+import ViewHeadlineIcon from '@mui/icons-material/ViewHeadline';
 import NewOrderButton from '../manual-order-create/NewOrderButton';
 import OrdersImportDialog from '../orders-import/OrdersImport';
 import { CsvFileSelector, useCsvFileSelector } from '../csv-file-selector';
 import { useDialog } from '../../hooks/use-dialog';
 import { useDownloadOrdersCsv } from '../../api/use-orders';
-import { useOrdersTableController } from './hooks';
+import { useOrdersTableController, type TableDensity } from './hooks';
 import * as styles from './orders-table.styles';
 
 const OrdersTable = () => {
+    const [density, setDensity] = useState<TableDensity>('default');
     const csvSelector = useCsvFileSelector();
 
     const importFileIds =
@@ -49,11 +54,12 @@ const OrdersTable = () => {
         isFetchingNextPage,
         hasNextPage,
         apiParams,
-    } = useOrdersTableController(debouncedImportFileIds);
+    } = useOrdersTableController(debouncedImportFileIds, density);
 
     const [showImportDialog, openImportDialog, closeImportDialog, mountImportDialog] = useDialog();
     const { mutate: downloadCsv, isPending: isDownloading } = useDownloadOrdersCsv();
 
+    const isSlim = density === 'slim';
     const virtualRows = isLoading ? [] : rowVirtualizer.getVirtualItems();
 
     const colGroup = (
@@ -89,6 +95,20 @@ const OrdersTable = () => {
                         />
                     </Stack>
                     <Stack direction='row' spacing={1.5} alignItems='center'>
+                        <ToggleButtonGroup
+                            value={density}
+                            exclusive
+                            size='small'
+                            onChange={(_, val) => val && setDensity(val)}
+                            sx={styles.densityToggle}
+                        >
+                            <ToggleButton value='default'>
+                                <ViewStreamIcon fontSize='small' />
+                            </ToggleButton>
+                            <ToggleButton value='slim'>
+                                <ViewHeadlineIcon fontSize='small' />
+                            </ToggleButton>
+                        </ToggleButtonGroup>
                         <Button
                             variant='outlined'
                             size='small'
@@ -227,6 +247,7 @@ const OrdersTable = () => {
                                                                     textAlign: 'right',
                                                                     ...(hasFilter && { paddingRight: '36px' }),
                                                                 }),
+                                                                ...(isSlim && styles.slimCell as object),
                                                             }}
                                                         >
                                                             {flexRender(

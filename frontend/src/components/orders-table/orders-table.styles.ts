@@ -106,6 +106,21 @@ export const highlightedCell: SxProps<Theme> = {
     bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
 };
 
+export const densityToggle: SxProps<Theme> = {
+    '& .MuiToggleButton-root': {
+        py: 0.5,
+        px: 0.75,
+        border: '1px solid',
+        borderColor: 'divider',
+    },
+};
+
+export const slimCell: SxProps<Theme> = {
+    py: '2px',
+    fontSize: '0.8rem',
+    lineHeight: 1.2,
+};
+
 export const scrollStatus: SxProps<Theme> = {
     display: 'flex',
     justifyContent: 'center',
