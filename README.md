@@ -68,7 +68,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-The API starts at `http://localhost:8080` (or your configured port). Swagger UI is available at `/swagger-ui.html`.
+The API starts at `http://localhost:8080` (or your configured port). Swagger UI is available at [`/swagger-ui.html`](https://api.ya3.uk/swagger-ui/index.html).
 
 **On Windows:**
 
@@ -153,7 +153,7 @@ instant-wellness-kits/
 | **Map**            | `GET /map/counties`, `GET /map/boundaries/*`, `GET /map/orders`            | GeoJSON boundaries, county aggregations, order plotting |
 | **Tax Localities** | `GET /tax-localities`, `POST /tax-localities/reload`                       | Manage NY tax rate data                                 |
 
-Full API documentation available via Swagger UI at `/swagger-ui.html` when the backend is running.
+Full API documentation available via [Swagger UI](https://api.ya3.uk/swagger-ui/index.html).
 
 ---
 
