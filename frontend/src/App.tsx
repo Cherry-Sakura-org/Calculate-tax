@@ -5,6 +5,7 @@ import PublicLayout from './components/layout/PublicLayout';
 import AuthenticatedLayout from './components/layout/AuthenticatedLayout';
 import LoginPage from './components/login/LoginPage';
 import OrdersPage from './components/OrdersPage';
+import DashboardPage from './components/dashboard/DashboardPage';
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ function App() {
                 </Route>
                 <Route element={<AuthenticatedLayout />}>
                     <Route path='/' element={<OrdersPage />} />
+                    <Route path='/dashboard' element={<DashboardPage />} />
                 </Route>
             </Routes>
 

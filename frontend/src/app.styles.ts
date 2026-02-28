@@ -6,8 +6,9 @@ export const root: SxProps<Theme> = {
 };
 
 export const appBar: SxProps<Theme> = {
-    background: '#ffffff',
-    borderBottom: '1px solid rgba(120,113,108,0.12)',
+    bgcolor: '#fff',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
     flexShrink: 0,
 };
 
