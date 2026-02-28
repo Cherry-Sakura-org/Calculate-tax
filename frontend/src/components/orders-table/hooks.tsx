@@ -548,5 +548,6 @@ export const useOrdersTableController = (importFileIds?: string) => {
         jurisdictionFilter,
         sortColumn,
         sortDirection,
+        apiParams,
     };
 };
