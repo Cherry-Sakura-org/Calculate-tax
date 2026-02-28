@@ -2,7 +2,8 @@ export interface AuthUser {
     id: string;
     username: string;
     email: string;
-    createdAt: string;
+    role: 'ADMIN' | 'SUPER_ADMIN';
+    oauthProvider?: string;
 }
 
 export interface LoginPayload {
