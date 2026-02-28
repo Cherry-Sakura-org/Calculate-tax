@@ -16,7 +16,7 @@ interface NewOrderDialogProps {
 }
 
 const NewOrderDialog = ({ open, onClose }: NewOrderDialogProps) => {
-    const { control, onSubmit, isSubmitting, submitDisabled } = useNewOrderDialogController({
+    const { control, onSubmit, isSubmitting } = useNewOrderDialogController({
         onSuccess: onClose,
     });
 
